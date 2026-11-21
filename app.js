@@ -233,7 +233,7 @@ function vToday() {
   <div class="today-grid">
     <div class="section">
       <div class="section-head"><h2>今日时间轴</h2><span class="sub">${new Date().toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" })}</span></div>
-      <div class="panel"><div class="panel-body"><div class="axis" id="axis">${rows}<div class="nowline" id="nowline"><span>现在 ${pad(now.getHours())}:${pad(now.getMinutes())}</span></div></div></div></div>
+      <div class="panel"><div class="panel-body">${cs.length ? "" : '<div class="sub" style="margin-bottom:12px">今天没有课程安排</div>'}<div class="axis" id="axis">${rows}<div class="nowline" id="nowline"><span>现在 ${pad(now.getHours())}:${pad(now.getMinutes())}</span></div></div></div></div>
     </div>
     <div class="section">
       <div class="section-head"><h2>待处理</h2><span class="sub">${flow.length} 项</span></div>
