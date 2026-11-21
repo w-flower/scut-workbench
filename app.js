@@ -23,6 +23,17 @@ const todayStr = () => ymd(new Date());
 const toMin = (s) => { const m = String(s || "").match(/(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : null; };
 function dayDiff(iso) { if (!iso) return NaN; const t = new Date(todayStr() + "T00:00:00"); const d = new Date(String(iso).slice(0, 10) + "T00:00:00"); return Math.round((d - t) / 86400000); }
 function weekNo(termStart) { const s = new Date(termStart + "T00:00:00"); const t = new Date(todayStr() + "T00:00:00"); return Math.max(1, Math.floor((t - s) / 604800000) + 1); }
+function wdOf(iso) { const g = new Date(iso + "T00:00:00").getDay(); return g === 0 ? 7 : g; }
+function selDate() { const d = new Date(todayStr() + "T00:00:00"); d.setDate(d.getDate() + (S.dayOffset || 0)); return ymd(d); }
+function ddv(id) { const el = document.querySelector('[data-dd="' + id + '"]'); return el ? el.dataset.value : ""; }
+function dd(id, opts, val, cls = "") {
+  const cur = opts.find((o) => String(o[0]) === String(val)) || opts[0] || ["", ""];
+  return `<div class="dd-wrap ${cls}" data-dd="${id}" data-value="${esc(cur[0])}"><button type="button" class="dd-trigger"><span class="dd-val">${esc(cur[1])}</span><span class="chev">${ico("chevron", "xs")}</span></button><div class="dd-menu">${opts.map((o) => `<div class="dd-opt" data-v="${esc(o[0])}" aria-selected="${String(o[0]) === String(cur[0])}"><span>${esc(o[1])}</span><span class="chk">${ico("check", "xs")}</span></div>`).join("")}</div></div>`;
+}
+function handleDD(id, val) {
+  if (id === "roleSel") { S.roleIdx = +val; if (!visibleViews().some((v) => v.id === S.view)) S.view = "today"; render(); return; }
+  if (id.indexOf("hwstate-") === 0) { const hid = id.slice(8); const h = DB.homework.find((x) => x.id === hid); if (h) mutate("已更新状态", () => db.from("homework").update({ state: val }).eq("id", hid), () => db.from("homework").update({ state: h.state }).eq("id", hid)); return; }
+}
 function relDue(iso) { const d = dayDiff(iso); if (!isFinite(d)) return ""; if (d < 0) return `已逾期 ${-d} 天`; if (d === 0) return "今天"; if (d === 1) return "明天"; return `${d} 天后`; }
 const fmtHM = (iso) => { if (!iso) return ""; const m = String(iso).match(/T(\d{2}):(\d{2})/) || String(iso).match(/(\d{1,2}):(\d{2})/); return m ? `${pad(m[1])}:${m[2]}` : ""; };
 const fmtMD = (iso) => { if (!iso) return ""; const m = String(iso).slice(0, 10).match(/\d{4}-(\d{2})-(\d{2})/); return m ? `${m[1]}/${m[2]}` : ""; };
@@ -70,7 +81,7 @@ const ico = (n, cls = "") => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hi
 /* ---------- state ---------- */
 let user = null;
 const DB = { memberships: [], todos: [], homework: [], schedule: [], notices: [], events: [], collections: [], approvals: [], rosters: [], sessions: [], prefs: {} };
-const S = { view: "today", roleIdx: 0, hwFilter: "undone", affairTab: null, ready: false };
+const S = { view: "today", roleIdx: 0, hwFilter: "undone", affairTab: null, ready: false, dayOffset: 0 };
 const capCache = () => (DB.memberships[S.roleIdx] && DB.memberships[S.roleIdx].roles && DB.memberships[S.roleIdx].roles.capabilities) || ["own"];
 const has = (c) => capCache().includes(c);
 const curM = () => DB.memberships[S.roleIdx] || { title: "普通学生", org_id: null, roles: { name: "普通学生", capabilities: ["own"] }, orgs: { name: "" } };
@@ -203,9 +214,8 @@ function renderNav() {
 function renderTop() {
   const v = VIEWS.find((x) => x.id === S.view) || VIEWS[0];
   $("#crumb").innerHTML = `<h1>${v.name}</h1><span class="week">第 ${weekNo(DB.user?.termStart || DEMO.user.termStart)} 周 · ${esc(DB.identity?.campus || DEMO.user.campus)}</span>`;
-  const opts = DB.memberships.map((m, i) => `<option value="${i}" ${i === S.roleIdx ? "selected" : ""}>${esc(m.roles?.name || "角色")} · ${esc(m.orgs?.name || "")}</option>`).join("");
-  $("#rolewrap").innerHTML = `<span class="rl">身份</span><select id="roleSel">${opts}</select>`;
-  $("#roleSel").onchange = (e) => { S.roleIdx = +e.target.value; if (!visibleViews().some((v2) => v2.id === S.view)) S.view = "today"; render(); };
+  const memOpts = DB.memberships.map((m, i) => [String(i), (m.roles?.name || "角色") + " · " + (m.orgs?.name || "")]);
+  $("#rolewrap").innerHTML = `<span class="rl">身份</span>` + dd("roleSel", memOpts.length ? memOpts : [["0", "普通学生"]], String(S.roleIdx), "dd-role");
 }
 function countUp(el) {
   const t = el.textContent.trim(); const m = t.match(/^(\d+)$/); if (!m) return;
@@ -223,7 +233,7 @@ function animateEntrance() {
   document.querySelectorAll("#content .ov-i b, #content .stat .num").forEach(countUp);
 }
 function decorateIcons() {
-  const map = [["时间轴", "clock"], ["待处理", "inbox"], ["收件", "inbox"], ["作业", "homework"], ["课表", "grid"], ["收集", "inbox"], ["审批", "check"], ["名单", "users"], ["统计", "chart"], ["通知", "bell"], ["活动", "calendar"], ["专注", "timer"], ["账号", "user"], ["AI", "spark"], ["外观", "sun"], ["数据", "db"], ["我的角色", "users"], ["本周课表", "grid"], ["添加课程", "grid"], ["发布通知", "bell"], ["专注音乐", "music"], ["今日专注记录", "timer"]];
+  const map = [["时间轴", "clock"], ["日程", "clock"], ["待处理", "inbox"], ["收件", "inbox"], ["作业", "homework"], ["课表", "grid"], ["收集", "inbox"], ["审批", "check"], ["名单", "users"], ["统计", "chart"], ["通知", "bell"], ["活动", "calendar"], ["专注", "timer"], ["账号", "user"], ["AI", "spark"], ["外观", "sun"], ["数据", "db"], ["我的角色", "users"], ["本周课表", "grid"], ["添加课程", "grid"], ["发布通知", "bell"], ["专注音乐", "music"], ["今日专注记录", "timer"]];
   const pick = (t) => { for (const [k, v] of map) if (t.includes(k)) return v; return "dot"; };
   document.querySelectorAll("#content .panel-head h3, #content .section-head h2, #content .set-block h3").forEach((h) => { if (h.querySelector(".hd-ic")) return; const s = document.createElement("span"); s.className = "hd-ic"; s.innerHTML = ico(pick(h.textContent), "sm"); h.prepend(s); });
   document.querySelectorAll("#content .empty").forEach((el) => { if (el.querySelector(".em-ic")) return; const d = document.createElement("div"); d.className = "em-ic"; d.innerHTML = ico("inbox"); el.prepend(d); });
@@ -261,7 +271,7 @@ function flowItems() {
   return items.sort((a, b) => ((a.date || "") + (a.time || "")).localeCompare((b.date || "") + (b.time || "")));
 }
 function vToday() {
-  const cs = todayCourses(); const now = new Date();
+  const ds = selDate(); const cs = DB.schedule.filter((c) => c.weekday === wdOf(ds)); const now = new Date();
   let rows = "";
   DEMO.periods.forEach(([n, s], i) => {
     const block = cs.filter((c) => c.period_start <= n && c.period_end >= n)
@@ -280,7 +290,7 @@ function vToday() {
   return `${banner}${overview}
   <div class="today-grid">
     <div class="section">
-      <div class="section-head"><h2>今日时间轴</h2><span class="sub">${new Date().toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" })}</span></div>
+      <div class="section-head"><h2>日程</h2><div class="daynav"><button class="dv" data-act="day-prev" aria-label="前一天">${ico("chevron", "xs")}</button><span class="dv-date">${new Date(ds + "T00:00:00").toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" })}</span><button class="dv next" data-act="day-next" aria-label="后一天">${ico("chevron", "xs")}</button><button class="dv-today" data-act="day-today">今天</button></div></div>
       ${cs.length
         ? `<div class="panel"><div class="panel-body"><div class="axis" id="axis">${rows}<div class="nowline" id="nowline"><span>现在 ${pad(now.getHours())}:${pad(now.getMinutes())}</span></div></div></div></div>`
         : `<div class="panel"><div class="panel-body"><div class="empty" style="padding:28px"><b>今天没有课</b>${["周日", "周六"].includes(weekdayName[todayWeekday()]) ? "周末，安心处理待办与复习。" : "空档的一天。"}</div></div></div>`}
@@ -365,7 +375,7 @@ function vHomework() {
         <div class="h">${esc(h.title)}</div>
         <div class="foot">
           <span class="tag ${dayDiff(h.due) < 0 ? "red" : dayDiff(h.due) <= 1 ? "amber" : "blue"}">${esc(relDue(h.due))}${h.due ? " · " + fmtMD(h.due) + " " + fmtHM(h.due) : ""}</span>
-          <select class="hw-state" data-id="${h.id}">${["未提交", "进行中", "已提交"].map((s) => `<option ${s === h.state ? "selected" : ""}>${s}</option>`).join("")}</select>
+          ${dd("hwstate-" + h.id, [["未提交", "未提交"], ["进行中", "进行中"], ["已提交", "已提交"]], h.state, "dd-sm")}
           ${h.note ? `<span class="sub">${esc(h.note)}</span>` : ""}
         </div>
       </div><button class="link-btn" data-act="hw-del" data-id="${h.id}" title="删除">${ico("trash", "sm")}</button></div>
@@ -404,9 +414,9 @@ function vSchedule() {
     <div class="panel" style="margin-top:16px"><div class="panel-head"><h3>添加课程</h3></div><div class="panel-body">
       <div class="addrow">
         <input class="sc_name grow" placeholder="课程名">
-        <select class="sc_day">${weekdayName.slice(1).map((w, i) => `<option value="${i + 1}">${w}</option>`).join("")}</select>
-        <select class="sc_s">${DEMO.periods.map(([n]) => `<option value="${n}">第${n}节</option>`).join("")}</select>
-        <select class="sc_e">${DEMO.periods.map(([n]) => `<option value="${n}" ${n === 2 ? "selected" : ""}>到第${n}节</option>`).join("")}</select>
+        ${dd("sc_day", weekdayName.slice(1).map((w, i) => [String(i + 1), w]), "1", "dd-sm")}
+        ${dd("sc_s", DEMO.periods.map(([n]) => [String(n), "第" + n + "节"]), "1", "dd-sm")}
+        ${dd("sc_e", DEMO.periods.map(([n]) => [String(n), "到第" + n + "节"]), "2", "dd-sm")}
         <input class="sc_room" placeholder="地点 如 A2-203" style="width:140px">
         <button class="btn primary sm" data-act="sc-add">${ico("plus", "sm")}</button>
       </div></div></div></div>`;
@@ -462,7 +472,7 @@ function vEvents() {
   const kn = { exam: "考试", activity: "活动", deadline: "截止", course: "课程" };
   const rows = list.map((e) => `<div class="row"><span class="tag ${e.kind === "exam" || e.kind === "deadline" ? "red" : "blue"}">${kn[e.kind] || "活动"}</span><div class="grow"><div class="title">${esc(e.name)}</div><div class="meta"><span>${esc((e.start_at || "").slice(5, 16).replace("T", " "))}</span><span>${esc(e.location || "")}</span></div></div><span class="tag">${esc(relDue(e.start_at))}</span><button class="link-btn del" data-act="event-del" data-id="${e.id}" title="删除">${ico("trash", "sm")}</button></div>`).join("");
   const canAdd = has("publish") || has("assign") || has("notice");
-  const add = canAdd ? `<div class="addrow"><input class="ev_name grow" placeholder="活动名"><input class="ev_start" type="datetime-local"><input class="ev_place" placeholder="地点" style="width:130px"><select class="ev_kind"><option value="activity">活动</option><option value="exam">考试</option><option value="deadline">截止</option><option value="course">课程</option></select><button class="btn primary sm" data-act="ev-add">${ico("plus", "sm")}</button></div>` : "";
+  const add = canAdd ? `<div class="addrow"><input class="ev_name grow" placeholder="活动名"><input class="ev_start" type="datetime-local"><input class="ev_place" placeholder="地点" style="width:130px">${dd("ev_kind", [["activity", "活动"], ["exam", "考试"], ["deadline", "截止"], ["course", "课程"]], "activity", "dd-sm")}<button class="btn primary sm" data-act="ev-add">${ico("plus", "sm")}</button></div>` : "";
   return `<div class="section"><div class="panel"><div class="panel-head"><h3>日程与活动</h3><span class="sub">${list.length} 项</span></div><div class="panel-body">${add}${rows || '<div class="empty"><b>暂无活动</b></div>'}</div></div></div>`;
 }
 
@@ -517,11 +527,15 @@ async function mutate(label, fn, undo) {
 }
 function bindView() {
   if (S.view === "today") { setTimeout(positionNowline, 30); const i = $("#tq-title"); if (i) i.onkeydown = (e) => { if (e.key === "Enter") addTodo(); }; }
-  if (S.view === "homework") $$(".hw-state").forEach((s) => (s.onchange = (e) => { const id = e.target.dataset.id, v = e.target.value; const old = DB.homework.find((h) => h.id === id)?.state; mutate("已更新状态", () => db.from("homework").update({ state: v }).eq("id", id), () => db.from("homework").update({ state: old }).eq("id", id)); }));
+
   applyTheme(localStorage.getItem("scut.theme") || "light");
 }
 function addTodo() { const i = $("#tq-title"); const v = i && i.value.trim(); if (!v) return; mutate("已添加待办", async () => { const { data } = await db.from("todos").insert({ user_id: user.id, scope: "personal", title: v, date: todayStr(), category: "学习", done: false }).select().single(); return data; }, (row) => db.from("todos").delete().eq("id", row.id)); }
 async function onClick(e) {
+  const ddt = e.target.closest("[data-dd-trigger]");
+  if (ddt) { const w = ddt.closest(".dd-wrap"); const open = w.classList.contains("open"); document.querySelectorAll(".dd-wrap.open").forEach((x) => x.classList.remove("open")); if (!open) w.classList.add("open"); return; }
+  const ddo = e.target.closest(".dd-opt");
+  if (ddo) { const w = ddo.closest(".dd-wrap"); w.dataset.value = ddo.dataset.v; w.querySelector(".dd-val").textContent = ddo.querySelector("span").textContent; w.querySelectorAll(".dd-opt").forEach((x) => x.setAttribute("aria-selected", x === ddo)); w.classList.remove("open"); handleDD(w.dataset.dd, ddo.dataset.v); return; }
   const t = e.target.closest("[data-act]"); if (!t) return; const act = t.dataset.act; const id = t.dataset.id;
   if (act === "open-cmd") { openCmd(); return; }
   if (act === "theme-toggle") { const nt = (localStorage.getItem("scut.theme") === "dark") ? "light" : "dark"; localStorage.setItem("scut.theme", nt); applyTheme(nt); render(); return; }
@@ -533,17 +547,20 @@ async function onClick(e) {
   if (act === "event-del") { const ev = DB.events.find((x) => x.id === id); if (!ev) return; mutate("已删除活动", () => db.from("events").delete().eq("id", id), () => db.from("events").insert({ org_id: ev.org_id, user_id: ev.user_id, name: ev.name, start_at: ev.start_at, location: ev.location, kind: ev.kind })); return; }
   if (act === "ai-parse") { window.__aiParse(); return; }
   if (act === "ai-adopt") { const c = (S._ai || [])[+t.dataset.idx]; if (c) mutate("已采纳为待办", async () => { const { data } = await db.from("todos").insert({ user_id: user.id, scope: "personal", title: c.title, date: c.due || todayStr(), time: c.time || null, category: "学习", done: false }).select().single(); return data; }, (row) => db.from("todos").delete().eq("id", row.id)); return; }
+  if (act === "day-prev") { S.dayOffset = (S.dayOffset || 0) - 1; render(); return; }
+  if (act === "day-next") { S.dayOffset = (S.dayOffset || 0) + 1; render(); return; }
+  if (act === "day-today") { S.dayOffset = 0; render(); return; }
   if (act === "hw-filter") { S.hwFilter = id; render(); return; }
   if (act === "hw-add") { const course = $(".hw_course").value.trim(), title = $(".hw_title").value.trim(), due = $(".hw_due").value; if (!title) { toast("填标题"); return; } mutate("已添加作业", async () => { const { data } = await db.from("homework").insert({ user_id: user.id, course: course || "未分类", title, due: due ? due + ":00" : (todayStr() + "T23:59:00"), state: "未提交" }).select().single(); return data; }, (row) => db.from("homework").delete().eq("id", row.id)); return; }
   if (act === "hw-del") { const h = DB.homework.find((x) => x.id === id); if (!h) return; mutate("已删除作业", () => db.from("homework").delete().eq("id", id), () => db.from("homework").insert({ user_id: user.id, course: h.course, title: h.title, due: h.due, note: h.note, state: h.state })); return; }
-  if (act === "sc-add") { const name = $(".sc_name").value.trim(); if (!name) { toast("填课程名"); return; } const s = +$(".sc_s").value, en = Math.max(s, +$(".sc_e").value); mutate("已添加课程", () => db.from("schedule").insert({ user_id: user.id, name, weekday: +$(".sc_day").value, period_start: s, period_end: en, location: $(".sc_room").value.trim() || "待定", weeks: "3-16" }), null); return; }
+  if (act === "sc-add") { const name = $(".sc_name").value.trim(); if (!name) { toast("填课程名"); return; } const s = +(ddv("sc_s") || 1), en = Math.max(s, +(ddv("sc_e") || s)), wd = +(ddv("sc_day") || 1); mutate("已添加课程", () => db.from("schedule").insert({ user_id: user.id, name, weekday: wd, period_start: s, period_end: en, location: $(".sc_room").value.trim() || "待定", weeks: "3-16" }), null); return; }
   if (act === "affair-tab") { S.affairTab = id; render(); return; }
   if (act === "collect-add") { const title = $(".co_title").value.trim(); if (!title) { toast("填任务名"); return; } const total = +($(".co_total").value || 0) || 50; mutate("已发起收集", () => db.from("collections").insert({ org_id: orgWithCap("collect"), title, fields: ["姓名"], due: todayStr(), total, status: "open" }), null); return; }
   if (act === "collect-remind") { const c = DB.collections.find((x) => x.id === id); toast("催办：" + (c ? c.title : "") + " 还差 " + (c ? (c.total - (c.got || 0)) : 0) + " 人，请尽快提交"); return; }
   if (act === "approve-ok") { const a = DB.approvals.find((x) => x.id === id); if (!a) return; mutate("已通过审批", () => db.from("approvals").update({ state: "已通过" }).eq("id", id), () => db.from("approvals").update({ state: a.state }).eq("id", id)); return; }
   if (act === "notice-read") { const n = DB.notices.find((x) => x.id === id); if (!n) return; mutate("已标记", () => db.from("notices").update({ read: !n.read }).eq("id", id), () => db.from("notices").update({ read: n.read }).eq("id", id)); return; }
   if (act === "notice-add") { const title = $(".no_title").value.trim(); if (!title) { toast("填标题"); return; } mutate("已发布通知", () => db.from("notices").insert({ org_id: orgWithCap("notice"), publisher: user.id, title, body: $(".no_body").value.trim(), source: curM().roles?.name || "班委", read: false }), null); return; }
-  if (act === "ev-add") { const name = $(".ev_name").value.trim(); if (!name) { toast("填活动名"); return; } mutate("已添加活动", () => db.from("events").insert({ org_id: orgWithCap("assign") || orgWithCap("publish"), user_id: user.id, name, start_at: ($(".ev_start").value || (todayStr() + "T19:00")) + ":00", location: $(".ev_place").value.trim() || "待定", kind: $(".ev_kind").value }), null); return; }
+  if (act === "ev-add") { const name = $(".ev_name").value.trim(); if (!name) { toast("填活动名"); return; } mutate("已添加活动", () => db.from("events").insert({ org_id: orgWithCap("assign") || orgWithCap("publish"), user_id: user.id, name, start_at: ($(".ev_start").value || (todayStr() + "T19:00")) + ":00", location: $(".ev_place").value.trim() || "待定", kind: ddv("ev_kind") || "activity" }), null); return; }
   if (act === "focus-preset") { persistPrefs({ focus_method: id }); DB.prefs = DB.prefs || {}; DB.prefs.focus_method = id; FT.running = false; FT.remain = 0; clearInterval(FT.tick); render(); return; }
   if (act === "focus-toggle") { if (FT.running) { clearInterval(FT.tick); FT.remain = Math.max(0, Math.round((FT.endAt - Date.now()) / 1000)); FT.running = false; render(); return; } const cur = focusPresets().find((x) => x.key === (DB.prefs?.focus_method || "pomodoro")) || focusPresets()[0]; const base = FT.remain > 0 ? FT.remain : cur.focus * 60; FT.endAt = Date.now() + base * 1000; FT.running = true; clearInterval(FT.tick); FT.tick = setInterval(focusTick, 250); render(); return; }
   if (act === "focus-reset") { clearInterval(FT.tick); FT.running = false; FT.remain = 0; render(); return; }
@@ -583,6 +600,7 @@ let bound = false;
 function bindGlobal() {
   if (bound) return; bound = true;
   document.addEventListener("click", onClick);
+  document.addEventListener("click", (e) => { if (!e.target.closest(".dd-wrap")) document.querySelectorAll(".dd-wrap.open").forEach((x) => x.classList.remove("open")); });
   document.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmd(); } if (e.key === "Escape") closeCmd(); });
   document.addEventListener("input", (e) => { if (e.target.matches("#cmd input")) renderCmd(e.target.value); });
   setInterval(() => { if (S.view === "today") positionNowline(); }, 30000);
