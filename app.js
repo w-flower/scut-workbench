@@ -30,25 +30,40 @@ const weekdayName = ["", "周一", "周二", "周三", "周四", "周五", "周�
 function todayWeekday() { const g = new Date().getDay(); return g === 0 ? 7 : g; }
 
 /* ---------- icons (single stroke system) ---------- */
+/* 自定义图标系统（母题：地平线 + 现在点；圆角 1.8 线性，几何统一） */
 const IC = {
-  today: '<path d="M4 5h16v15H4z"/><path d="M8 3v4M16 3v4M4 9h16"/><rect x="9" y="12.5" width="2.4" height="2.4" rx=".6" fill="currentColor" stroke="none"/>',
-  homework: '<path d="M6 3h9l3 3v15H6z"/><path d="M9 8h6M9 12h6M9 16h4"/>',
-  grid: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M9 9v12M15 9v12"/>',
-  users: '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 2.5-5 6-5s6 2 6 5"/><path d="M16 5a3 3 0 0 1 0 6M21 20c0-2.5-1.5-4-4-4.5"/>',
-  bell: '<path d="M6 8a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7z"/><path d="M10 21a2 2 0 0 0 4 0"/>',
-  calendar: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/>',
-  timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/>',
-  settings: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2 2M16.4 16.4l2 2M18.4 5.6l-2 2M7.6 16.4l-2 2"/>',
-  plus: '<path d="M12 5v14M5 12h14"/>', check: '<path d="M5 12l5 5 9-11"/>',
-  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
-  moon: '<path d="M20 14a8 8 0 1 1-9-11 6 6 0 0 0 9 11z"/>',
-  trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14"/>',
-  play: '<path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/>',
-  pause: '<path d="M7 4v16M17 4v16" stroke-width="3"/>',
-  reset: '<path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/>',
-  music: '<path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/>',
-  doc: '<path d="M7 3h7l3 3v15H7z"/><path d="M10 9h5M10 13h5"/>',
-  pin: '<path d="M12 21s6-5.2 6-10a6 6 0 1 0-12 0c0 4.8 6 10 6 10z"/><circle cx="12" cy="11" r="2.2"/>'
+  today: '<rect x="3.5" y="4.5" width="17" height="16" rx="4"/><path d="M8 3v3.5M16 3v3.5M3.5 9.5h17"/><circle cx="12" cy="14.4" r="1.7" fill="currentColor" stroke="none"/>',
+  homework: '<path d="M6 3.5h8.5A2.5 2.5 0 0 1 17 6v14.5H6z"/><path d="M6 3.5A2 2 0 0 0 4 5.5v13A2 2 0 0 1 6 16.5"/><path d="M9 8.5h4.5M9 12h4.5"/>',
+  grid: '<rect x="3.5" y="4" width="17" height="16" rx="3.5"/><path d="M3.5 9.3h17M9.3 9.3V20M14.7 9.3V20"/>',
+  users: '<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19.5c0-2.8 2.4-4.6 5.5-4.6s5.5 1.8 5.5 4.6"/><path d="M16 6.2a3 3 0 0 1 0 5.6"/><path d="M20.5 19.5c0-2.2-1.3-3.6-3.6-4.1"/>',
+  bell: '<path d="M6 9a6 6 0 0 1 12 0c0 5 1.6 6 1.6 6H4.4S6 14 6 9z"/><path d="M9.8 20a2.2 2.2 0 0 0 4.4 0"/><circle cx="17.5" cy="4" r="1.6" fill="currentColor" stroke="none"/>',
+  calendar: '<rect x="3.5" y="4.5" width="17" height="16" rx="3.5"/><path d="M3.5 9.5h17M8 3v3.5M16 3v3.5"/><circle cx="12" cy="14.5" r="1.5" fill="currentColor" stroke="none"/>',
+  timer: '<circle cx="12" cy="13" r="7.5"/><path d="M12 9.5v3.7l2.2 1.6M9.5 2.5h5"/><circle cx="12" cy="13" r="1.1" fill="currentColor" stroke="none"/>',
+  settings: '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.8l1.4 2.1 2.5-.4.6 2.4 2.2 1.2-1 2.3 1 2.3-2.2 1.2-.6 2.4-2.5-.4L12 21.2l-1.4-2.1-2.5.4-.6-2.4L5.3 15.9l1-2.3-1-2.3 2.2-1.2.6-2.4 2.5.4z"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>', check: '<path d="M5 12.5l4.5 4.5L19 6.5"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/>',
+  moon: '<path d="M20 14.5A8.2 8.2 0 1 1 9.5 4a6.4 6.4 0 0 0 10.5 10.5z"/>',
+  user: '<circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.3 3.1-5.2 7-5.2s7 1.9 7 5.2"/>',
+  switch: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+  command: '<rect x="4" y="4" width="6" height="6" rx="2"/><rect x="14" y="4" width="6" height="6" rx="2"/><rect x="4" y="14" width="6" height="6" rx="2"/><rect x="14" y="14" width="6" height="6" rx="2"/>',
+  trash: '<path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13"/><path d="M10.5 11v5M13.5 11v5"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/>',
+  external: '<path d="M14 4h6v6M20 4l-8.5 8.5M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+  play: '<path d="M7 4.5l13 7.5-13 7.5z" fill="currentColor" stroke="none"/>',
+  pause: '<path d="M7.5 4.5v15M16.5 4.5v15" stroke-width="3.2"/>',
+  reset: '<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v4h4"/>',
+  music: '<path d="M9 18V5.5l10-2V16"/><circle cx="6.2" cy="18" r="2.8"/><circle cx="16.2" cy="16" r="2.8"/>',
+  pin: '<path d="M12 21s6-5.2 6-10a6 6 0 1 0-12 0c0 4.8 6 10 6 10z"/><circle cx="12" cy="11" r="2.1"/>',
+  clock: '<circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 1.8"/>',
+  inbox: '<path d="M4 13l2.2-7.2A2 2 0 0 1 8.1 4.4h7.8a2 2 0 0 1 1.9 1.4L20 13"/><path d="M4 13v4.6A2.4 2.4 0 0 0 6.4 20h11.2A2.4 2.4 0 0 0 20 17.6V13"/><path d="M4 13h4l1.5 2.5h5L16 13h4"/>',
+  chart: '<path d="M4 20V4"/><path d="M4 20h16"/><rect x="7" y="11" width="3" height="6" rx="1"/><rect x="12.5" y="7" width="3" height="10" rx="1"/><rect x="18" y="13" width="3" height="4" rx="1"/>',
+  flag: '<path d="M6 21V4"/><path d="M6 4.5h11l-2 3.5 2 3.5H6"/>',
+  db: '<ellipse cx="12" cy="6" rx="7" ry="2.8"/><path d="M5 6v12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8V6"/><path d="M5 12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8"/>',
+  spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M18.5 15.5l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z" fill="currentColor" stroke="none"/>',
+  dot: '<circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>',
+  chevron: '<path d="M9 6l6 6-6 6"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>'
 };
 const ico = (n, cls = "") => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${IC[n] || ""}</svg>`;
 
@@ -207,6 +222,12 @@ function animateEntrance() {
   items.forEach((el, i) => { el.style.animation = "fadeUp .3s var(--ease) both"; el.style.animationDelay = Math.min(i * 26, 220) + "ms"; });
   document.querySelectorAll("#content .ov-i b, #content .stat .num").forEach(countUp);
 }
+function decorateIcons() {
+  const map = [["时间轴", "clock"], ["待处理", "inbox"], ["收件", "inbox"], ["作业", "homework"], ["课表", "grid"], ["收集", "inbox"], ["审批", "check"], ["名单", "users"], ["统计", "chart"], ["通知", "bell"], ["活动", "calendar"], ["专注", "timer"], ["账号", "user"], ["AI", "spark"], ["外观", "sun"], ["数据", "db"], ["我的角色", "users"], ["本周课表", "grid"], ["添加课程", "grid"], ["发布通知", "bell"], ["专注音乐", "music"], ["今日专注记录", "timer"]];
+  const pick = (t) => { for (const [k, v] of map) if (t.includes(k)) return v; return "dot"; };
+  document.querySelectorAll("#content .panel-head h3, #content .section-head h2, #content .set-block h3").forEach((h) => { if (h.querySelector(".hd-ic")) return; const s = document.createElement("span"); s.className = "hd-ic"; s.innerHTML = ico(pick(h.textContent), "sm"); h.prepend(s); });
+  document.querySelectorAll("#content .empty").forEach((el) => { if (el.querySelector(".em-ic")) return; const d = document.createElement("div"); d.className = "em-ic"; d.innerHTML = ico("inbox"); el.prepend(d); });
+}
 function render() {
   if (!S.ready) return;
   DB.identity = DB.identity || { campus: DEMO.user.campus, termStart: DEMO.user.termStart };
@@ -215,6 +236,7 @@ function render() {
   const changed = S._lastView !== S.view;
   $("#content").innerHTML = fn();
   bindView();
+  decorateIcons();
   if (changed) animateEntrance();
   S._lastView = S.view;
 }
@@ -259,7 +281,9 @@ function vToday() {
   <div class="today-grid">
     <div class="section">
       <div class="section-head"><h2>今日时间轴</h2><span class="sub">${new Date().toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" })}</span></div>
-      <div class="panel"><div class="panel-body">${cs.length ? "" : '<div class="sub" style="margin-bottom:12px">今天没有课程安排</div>'}<div class="axis" id="axis">${rows}<div class="nowline" id="nowline"><span>现在 ${pad(now.getHours())}:${pad(now.getMinutes())}</span></div></div></div></div>
+      ${cs.length
+        ? `<div class="panel"><div class="panel-body"><div class="axis" id="axis">${rows}<div class="nowline" id="nowline"><span>现在 ${pad(now.getHours())}:${pad(now.getMinutes())}</span></div></div></div></div>`
+        : `<div class="panel"><div class="panel-body"><div class="empty" style="padding:28px"><b>今天没有课</b>${["周日", "周六"].includes(weekdayName[todayWeekday()]) ? "周末，安心处理待办与复习。" : "空档的一天。"}</div></div></div>`}
     </div>
     <div class="section">
       <div class="section-head"><h2>待处理</h2><span class="sub">${flow.length} 项</span></div>
@@ -414,8 +438,8 @@ function tabStats() {
   const hw = DB.homework.length, hwDone = DB.homework.filter((h) => h.state === "已提交").length;
   const td = DB.todos.length, tdDone = DB.todos.filter((t) => t.done).length;
   const cg = DB.collections.reduce((s, c) => s + (c.got || 0), 0), ct = DB.collections.reduce((s, c) => s + (c.total || 0), 0);
-  const cell = (n, l) => `<div class="stat"><div class="num">${n}</div><div class="stat-l">${l}</div></div>`;
-  return `<div class="stats">${cell(hwDone + "/" + hw, "作业已交")}${cell(tdDone + "/" + td, "待办完成")}${cell(cg + "/" + ct, "收集回执")}${cell(DB.events.length, "活动总数")}</div>`;
+  const cell = (n, l, ic) => `<div class="stat"><div class="st-ic">${ico(ic, "sm")}</div><div class="num">${n}</div><div class="stat-l">${l}</div></div>`;
+  return `<div class="stats">${cell(hwDone + "/" + hw, "作业已交", "homework")}${cell(tdDone + "/" + td, "待办完成", "check")}${cell(cg + "/" + ct, "收集回执", "inbox")}${cell(DB.events.length, "活动总数", "calendar")}</div>`;
 }
 function tabAssign() {
   const rows = DB.todos.filter((t) => !t.done).map((t) => `<div class="row"><div class="grow"><div class="title">${esc(t.title)}</div><div class="meta"><span class="tag">${esc(t.category || "")}</span><span>${esc(t.date || "")}</span></div></div></div>`).join("");
