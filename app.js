@@ -248,20 +248,6 @@ function editBar() {
   else return "";
   return `<div class="panel editbar" id="editbar"><div class="panel-body"><div class="editbar-h">${ico("edit", "sm")}<b>${title}</b></div><div class="addrow" style="padding:9px 0 0">${fields}<button class="btn primary sm" data-act="edit-save">保存</button><button class="btn sm danger" data-act="edit-delete">删除</button><button class="btn sm" data-act="edit-cancel">取消</button></div></div></div>`;
 }
-function saveEdit() {
-  const e = S.edit; if (!e) return; const box = $("#editbar"); const v = (sel) => { const el = box && box.querySelector(sel); return el ? el.value : ""; };
-  if (e.type === "todo") { const x = DB.todos.find((t) => t.id === e.id); S.edit = null; mutate("已保存", () => db.from("todos").update({ title: v(".e-title"), date: v(".e-date") || null, time: v(".e-time") || null }).eq("id", e.id), () => db.from("todos").update({ title: x.title, date: x.date, time: x.time }).eq("id", e.id)); }
-  else if (e.type === "homework") { const x = DB.homework.find((h) => h.id === e.id); S.edit = null; mutate("已保存", () => db.from("homework").update({ course: v(".e-course"), title: v(".e-title"), due: v(".e-due") ? v(".e-due") + ":00" : null, state: ddv("e_state") }).eq("id", e.id), () => db.from("homework").update({ course: x.course, title: x.title, due: x.due, state: x.state }).eq("id", e.id)); }
-  else if (e.type === "notice") { const x = DB.notices.find((n) => n.id === e.id); S.edit = null; mutate("已保存", () => db.from("notices").update({ title: v(".e-title"), body: v(".e-body"), source: v(".e-source") }).eq("id", e.id), () => db.from("notices").update({ title: x.title, body: x.body, source: x.source }).eq("id", e.id)); }
-  else if (e.type === "event") { const x = DB.events.find((ev) => ev.id === e.id); S.edit = null; mutate("已保存", () => db.from("events").update({ name: v(".e-title"), start_at: v(".e-start") ? v(".e-start") + ":00" : null, location: v(".e-place"), kind: ddv("e_kind") }).eq("id", e.id), () => db.from("events").update({ name: x.name, start_at: x.start_at, location: x.location, kind: x.kind }).eq("id", e.id)); }
-  else if (e.type === "schedule") { const x = DB.schedule.find((s) => s.id === e.id); S.edit = null; mutate("已保存", () => db.from("schedule").update({ name: v(".e-title"), location: v(".e-room"), weekday: +ddv("e_day"), period_start: +ddv("e_s"), period_end: +ddv("e_e") }).eq("id", e.id), () => db.from("schedule").update({ name: x.name, location: x.location, weekday: x.weekday, period_start: x.period_start, period_end: x.period_end }).eq("id", e.id)); }
-}
-function deleteEdit() {
-  const e = S.edit; if (!e) return; S.edit = null;
-  if (e.type === "notice") { mutate("已删除", () => db.from("notices").update({ audience: { deleted: true } }).eq("id", e.id), null); return; }
-  const map = { todo: ["todos", DB.todos], homework: ["homework", DB.homework], event: ["events", DB.events], schedule: ["schedule", DB.schedule] };
-  const m = map[e.type]; if (!m) return; mutate("已删除", () => db.from(m[0]).delete().eq("id", e.id), null);
-}
 function render() {
   if (!S.ready) return;
   DB.identity = DB.identity || { campus: DEMO.user.campus, termStart: DEMO.user.termStart };
