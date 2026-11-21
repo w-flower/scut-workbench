@@ -18,20 +18,20 @@
     <input id="lg-email" type="email" value="demo@scut.edu.cn" autocomplete="username">
     <label>密码</label>
     <input id="lg-pw" type="password" value="Demo#2026" autocomplete="current-password">
-    <button class="primary" onclick="__doLogin()">登录</button>
+    <button class="primary" id="lg-btn" onclick="__doLogin()">登录</button>
     <div class="err" id="lg-err"></div>
     <div class="hint">演示账号：<b>demo@scut.edu.cn</b> / <b>Demo#2026</b><br>本版本数据存于浏览器本地（localStorage），刷新不丢。</div>
   </div>
 </div>
 
 <!-- 应用外壳 -->
-<div class="app" id="app">
+<div class="app" id="app" style="visibility:hidden">
   <aside class="rail">
     <div class="rail-top">
       <div class="brand"><div class="brand-mark">SC</div><div class="brand-name">SCUT 工作台</div></div>
       <div class="brand-sub">多角色校园事务协作台</div>
     </div>
-    <div class="identity"><div class="avatar">演</div><div><b>演示同学</b><span>2026级计算机类1班</span></div></div>
+    <div class="identity"><div class="avatar">演</div><div><b id="idName">演示同学</b><span id="idSub">2026级计算机类1班</span></div></div>
     <nav class="nav" id="nav"></nav>
     <div class="rail-foot">数智新技艺 2026 · 自主研发应用</div>
   </aside>
