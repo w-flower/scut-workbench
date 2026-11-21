@@ -81,7 +81,7 @@ const ico = (n, cls = "") => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hi
 /* ---------- state ---------- */
 let user = null;
 const DB = { memberships: [], todos: [], homework: [], schedule: [], notices: [], events: [], collections: [], approvals: [], rosters: [], sessions: [], prefs: {} };
-const S = { view: "today", roleIdx: 0, hwFilter: "undone", affairTab: null, ready: false, dayOffset: 0 };
+const S = { view: "today", roleIdx: 0, hwFilter: "undone", affairTab: null, ready: false, dayOffset: 0, edit: null };
 const capCache = () => (DB.memberships[S.roleIdx] && DB.memberships[S.roleIdx].roles && DB.memberships[S.roleIdx].roles.capabilities) || ["own"];
 const has = (c) => capCache().includes(c);
 const curM = () => DB.memberships[S.roleIdx] || { title: "普通学生", org_id: null, roles: { name: "普通学生", capabilities: ["own"] }, orgs: { name: "" } };
@@ -238,19 +238,43 @@ function decorateIcons() {
   document.querySelectorAll("#content .panel-head h3, #content .section-head h2, #content .set-block h3").forEach((h) => { if (h.querySelector(".hd-ic")) return; const s = document.createElement("span"); s.className = "hd-ic"; s.innerHTML = ico(pick(h.textContent), "sm"); h.prepend(s); });
   document.querySelectorAll("#content .empty").forEach((el) => { if (el.querySelector(".em-ic")) return; const d = document.createElement("div"); d.className = "em-ic"; d.innerHTML = ico("inbox"); el.prepend(d); });
 }
+function editBar() {
+  const e = S.edit; if (!e) return ""; let fields = "", title = "";
+  if (e.type === "todo") { const x = DB.todos.find((t) => t.id === e.id); if (!x) return ""; title = "编辑待办"; fields = `<input class="e-title grow" value="${esc(x.title)}"><input class="e-date" type="date" value="${x.date || ""}"><input class="e-time" type="time" value="${(x.time || "").slice(0, 5)}">`; }
+  else if (e.type === "homework") { const x = DB.homework.find((h) => h.id === e.id); if (!x) return ""; title = "编辑作业"; fields = `<input class="e-course" value="${esc(x.course || "")}" style="width:130px"><input class="e-title grow" value="${esc(x.title)}"><input class="e-due" type="datetime-local" value="${(x.due || "").slice(0, 16)}">${dd("e_state", [["未提交", "未提交"], ["进行中", "进行中"], ["已提交", "已提交"]], x.state, "dd-sm")}`; }
+  else if (e.type === "notice") { const x = DB.notices.find((n) => n.id === e.id); if (!x) return ""; title = "编辑通知"; fields = `<input class="e-title grow" value="${esc(x.title)}"><input class="e-body grow" value="${esc(x.body || "")}"><input class="e-source" value="${esc(x.source || "")}" style="width:110px">`; }
+  else if (e.type === "event") { const x = DB.events.find((ev) => ev.id === e.id); if (!x) return ""; title = "编辑活动"; fields = `<input class="e-title grow" value="${esc(x.name)}"><input class="e-start" type="datetime-local" value="${(x.start_at || "").slice(0, 16)}"><input class="e-place" value="${esc(x.location || "")}" style="width:120px">${dd("e_kind", [["activity", "活动"], ["exam", "考试"], ["deadline", "截止"], ["course", "课程"]], x.kind || "activity", "dd-sm")}`; }
+  else if (e.type === "schedule") { const x = DB.schedule.find((s) => s.id === e.id); if (!x) return ""; title = "编辑课程"; fields = `<input class="e-title grow" value="${esc(x.name)}"><input class="e-room" value="${esc(x.location || "")}" style="width:130px">${dd("e_day", weekdayName.slice(1).map((w, i) => [String(i + 1), w]), String(x.weekday), "dd-sm")}${dd("e_s", DEMO.periods.map(([n]) => [String(n), "第" + n + "节"]), String(x.period_start), "dd-sm")}${dd("e_e", DEMO.periods.map(([n]) => [String(n), "到" + n + "节"]), String(x.period_end), "dd-sm")}`; }
+  else return "";
+  return `<div class="panel editbar" id="editbar"><div class="panel-body"><div class="editbar-h">${ico("edit", "sm")}<b>${title}</b></div><div class="addrow" style="padding:9px 0 0">${fields}<button class="btn primary sm" data-act="edit-save">保存</button><button class="btn sm danger" data-act="edit-delete">删除</button><button class="btn sm" data-act="edit-cancel">取消</button></div></div></div>`;
+}
+function saveEdit() {
+  const e = S.edit; if (!e) return; const box = $("#editbar"); const v = (sel) => { const el = box && box.querySelector(sel); return el ? el.value : ""; };
+  if (e.type === "todo") { const x = DB.todos.find((t) => t.id === e.id); S.edit = null; mutate("已保存", () => db.from("todos").update({ title: v(".e-title"), date: v(".e-date") || null, time: v(".e-time") || null }).eq("id", e.id), () => db.from("todos").update({ title: x.title, date: x.date, time: x.time }).eq("id", e.id)); }
+  else if (e.type === "homework") { const x = DB.homework.find((h) => h.id === e.id); S.edit = null; mutate("已保存", () => db.from("homework").update({ course: v(".e-course"), title: v(".e-title"), due: v(".e-due") ? v(".e-due") + ":00" : null, state: ddv("e_state") }).eq("id", e.id), () => db.from("homework").update({ course: x.course, title: x.title, due: x.due, state: x.state }).eq("id", e.id)); }
+  else if (e.type === "notice") { const x = DB.notices.find((n) => n.id === e.id); S.edit = null; mutate("已保存", () => db.from("notices").update({ title: v(".e-title"), body: v(".e-body"), source: v(".e-source") }).eq("id", e.id), () => db.from("notices").update({ title: x.title, body: x.body, source: x.source }).eq("id", e.id)); }
+  else if (e.type === "event") { const x = DB.events.find((ev) => ev.id === e.id); S.edit = null; mutate("已保存", () => db.from("events").update({ name: v(".e-title"), start_at: v(".e-start") ? v(".e-start") + ":00" : null, location: v(".e-place"), kind: ddv("e_kind") }).eq("id", e.id), () => db.from("events").update({ name: x.name, start_at: x.start_at, location: x.location, kind: x.kind }).eq("id", e.id)); }
+  else if (e.type === "schedule") { const x = DB.schedule.find((s) => s.id === e.id); S.edit = null; mutate("已保存", () => db.from("schedule").update({ name: v(".e-title"), location: v(".e-room"), weekday: +ddv("e_day"), period_start: +ddv("e_s"), period_end: +ddv("e_e") }).eq("id", e.id), () => db.from("schedule").update({ name: x.name, location: x.location, weekday: x.weekday, period_start: x.period_start, period_end: x.period_end }).eq("id", e.id)); }
+}
+function deleteEdit() {
+  const e = S.edit; if (!e) return; S.edit = null;
+  if (e.type === "notice") { mutate("已删除", () => db.from("notices").update({ audience: { deleted: true } }).eq("id", e.id), null); return; }
+  const map = { todo: ["todos", DB.todos], homework: ["homework", DB.homework], event: ["events", DB.events], schedule: ["schedule", DB.schedule] };
+  const m = map[e.type]; if (!m) return; mutate("已删除", () => db.from(m[0]).delete().eq("id", e.id), null);
+}
 function render() {
   if (!S.ready) return;
   DB.identity = DB.identity || { campus: DEMO.user.campus, termStart: DEMO.user.termStart };
   renderNav(); renderTop();
   const fn = ({ today: vToday, homework: vHomework, schedule: vSchedule, affairs: vAffairs, notices: vNotices, events: vEvents, focus: vFocus, settings: vSettings })[S.view] || vToday;
   const changed = S._lastView !== S.view;
-  $("#content").innerHTML = fn();
+  $("#content").innerHTML = (S.edit ? editBar() : "") + fn();
   bindView();
   decorateIcons();
   if (changed) animateEntrance();
   S._lastView = S.view;
 }
-function setView(id) { S.view = id; history.replaceState(null, "", "#" + id); render(); window.scrollTo({ top: 0 }); }
+function setView(id) { S.view = id; S.edit = null; history.replaceState(null, "", "#" + id); render(); window.scrollTo({ top: 0 }); }
 
 /* ---------- next-thing banner ---------- */
 function nextThing() {
@@ -282,7 +306,7 @@ function vToday() {
   const flowHtml = flow.length ? flow.map((it) =>
     `<div class="row"><button class="check" data-act="todo-toggle" data-id="${it.kind === "todo" ? it.id : ""}" aria-pressed="false" aria-label="完成" ${it.kind === "homework" ? 'data-kind="hw" data-hwid="' + it.id + '"' : ""}>${ico("check", "sm")}</button>
       <div class="grow"><div class="title">${esc(it.title)}</div><div class="meta"><span class="tag ${dayDiff(it.date) < 0 ? "red" : dayDiff(it.date) <= 1 ? "amber" : ""}">${esc(relDue(it.date))}${it.time ? " · " + it.time : ""}</span>${it.sub ? `<span class="sub">${esc(it.sub)}</span>` : ""}${it.cat ? `<span class="tag">${esc(it.cat)}</span>` : ""}</div></div>
-      <button class="link-btn" data-act="view" data-id="${it.kind === "homework" ? "homework" : "today"}">${it.kind === "homework" ? "去提交" : "查看"}</button>${it.kind === "todo" ? `<button class="link-btn del" data-act="todo-del" data-id="${it.id}" title="删除">${ico("trash", "sm")}</button>` : ""}</div>`).join("")
+      <button class="link-btn" data-act="edit" data-type="${it.kind === "homework" ? "homework" : "todo"}" data-id="${it.id}" title="编辑">${ico("edit", "sm")}</button><button class="link-btn" data-act="view" data-id="${it.kind === "homework" ? "homework" : "today"}">${it.kind === "homework" ? "去提交" : "查看"}</button>${it.kind === "todo" ? `<button class="link-btn del" data-act="todo-del" data-id="${it.id}" title="删除">${ico("trash", "sm")}</button>` : ""}</div>`).join("")
     : `<div class="empty"><b>今天没有临近截止</b>可以松一口气。</div>`;
   const banner = nt ? `<div class="nextband"><span class="nb-k">下一件事</span><span class="nb-t">${esc(nt.title)}</span><span class="nb-d">${esc(relDue(nt.at.slice(0, 10)))}${fmtHM(nt.at) ? " · " + fmtHM(nt.at) : ""}</span></div>` : "";
   const c = counts();
@@ -378,7 +402,7 @@ function vHomework() {
           ${dd("hwstate-" + h.id, [["未提交", "未提交"], ["进行中", "进行中"], ["已提交", "已提交"]], h.state, "dd-sm")}
           ${h.note ? `<span class="sub">${esc(h.note)}</span>` : ""}
         </div>
-      </div><button class="link-btn" data-act="hw-del" data-id="${h.id}" title="删除">${ico("trash", "sm")}</button></div>
+      </div><button class="link-btn" data-act="edit" data-type="homework" data-id="${h.id}" title="编辑">${ico("edit", "sm")}</button><button class="link-btn" data-act="hw-del" data-id="${h.id}" title="删除">${ico("trash", "sm")}</button></div>
     </div>`).join("") : `<div class="empty"><b>没有符合条件的作业</b>换个筛选看看。</div>`;
   return `<div class="section">
     <div class="filters" style="margin-bottom:14px">
@@ -402,8 +426,8 @@ function vSchedule() {
     for (let d = 1; d <= 7; d++) {
       const startCs = DB.schedule.filter((c) => c.weekday === d && c.period_start === n);
       const contCs = DB.schedule.filter((c) => c.weekday === d && c.period_start < n && c.period_end >= n);
-      const block = startCs.map((c) => `<div class="ev" data-act="sc-del" data-id="${c.id}" title="${esc(c.name)}${c.location ? " · " + esc(c.location) : ""}（点击删除）"><b>${esc(c.name)}</b>${c.location ? `<span>${esc(c.location)}</span>` : ""}${c.period_end > c.period_start ? `<em>第${c.period_start}-${c.period_end}节</em>` : ""}</div>`).join("");
-      const cont = contCs.map((c) => `<div class="ev cont" data-act="sc-del" data-id="${c.id}" title="续 ${esc(c.name)}"></div>`).join("");
+      const block = startCs.map((c) => `<div class="ev" data-act="edit" data-type="schedule" data-id="${c.id}" title="${esc(c.name)}${c.location ? " · " + esc(c.location) : ""}（点击编辑）"><b>${esc(c.name)}</b>${c.location ? `<span>${esc(c.location)}</span>` : ""}${c.period_end > c.period_start ? `<em>第${c.period_start}-${c.period_end}节</em>` : ""}</div>`).join("");
+      const cont = contCs.map((c) => `<div class="ev cont" title="续 ${esc(c.name)}"></div>`).join("");
       body += `<div class="cell ${d === todayW ? "today" : ""}">${block}${cont}</div>`;
     }
   });
@@ -461,7 +485,7 @@ function tabAssign() {
 
 /* ---------- view: notices ---------- */
 function vNotices() {
-  const rows = DB.notices.length ? DB.notices.map((n) => `<div class="row ${n.read ? "done" : ""}"><span class="tag ${n.read ? "" : "blue"}">${esc(n.source || "")}</span><div class="grow"><div class="title">${esc(n.title)}</div><div class="meta"><span>${esc((n.created_at || "").slice(5, 16).replace("T", " "))}</span><span>${esc(n.body || "")}</span></div></div><button class="link-btn" data-act="notice-read" data-id="${n.id}">${n.read ? "已读" : "标已读"}</button></div>`).join("") : `<div class="empty"><b>没有通知</b></div>`;
+  const rows = DB.notices.length ? DB.notices.map((n) => `<div class="row ${n.read ? "done" : ""}"><span class="tag ${n.read ? "" : "blue"}">${esc(n.source || "")}</span><div class="grow"><div class="title">${esc(n.title)}</div><div class="meta"><span>${esc((n.created_at || "").slice(5, 16).replace("T", " "))}</span><span>${esc(n.body || "")}</span></div></div><button class="link-btn" data-act="edit" data-type="notice" data-id="${n.id}" title="编辑">${ico("edit", "sm")}</button><button class="link-btn" data-act="notice-read" data-id="${n.id}">${n.read ? "已读" : "标已读"}</button></div>`).join("") : `<div class="empty"><b>没有通知</b></div>`;
   const add = has("notice") ? `<div class="panel" style="margin-bottom:16px"><div class="panel-head"><h3>发布通知</h3><span class="sub">${esc(curM().roles?.name || "")}</span></div><div class="panel-body"><div class="addrow"><input class="no_title grow" placeholder="通知标题"><input class="no_body grow" placeholder="正文摘要"><button class="btn primary sm" data-act="notice-add">${ico("plus", "sm")}发布</button></div></div></div>` : "";
   return `<div class="section">${add}<div class="panel"><div class="panel-head"><h3>通知</h3><span class="sub">${DB.notices.filter((n) => !n.read).length} 条未读</span></div><div class="panel-body">${rows}</div></div></div>`;
 }
@@ -470,7 +494,7 @@ function vNotices() {
 function vEvents() {
   const list = DB.events.slice().sort((a, b) => String(a.start_at).localeCompare(String(b.start_at)));
   const kn = { exam: "考试", activity: "活动", deadline: "截止", course: "课程" };
-  const rows = list.map((e) => `<div class="row"><span class="tag ${e.kind === "exam" || e.kind === "deadline" ? "red" : "blue"}">${kn[e.kind] || "活动"}</span><div class="grow"><div class="title">${esc(e.name)}</div><div class="meta"><span>${esc((e.start_at || "").slice(5, 16).replace("T", " "))}</span><span>${esc(e.location || "")}</span></div></div><span class="tag">${esc(relDue(e.start_at))}</span><button class="link-btn del" data-act="event-del" data-id="${e.id}" title="删除">${ico("trash", "sm")}</button></div>`).join("");
+  const rows = list.map((e) => `<div class="row"><span class="tag ${e.kind === "exam" || e.kind === "deadline" ? "red" : "blue"}">${kn[e.kind] || "活动"}</span><div class="grow"><div class="title">${esc(e.name)}</div><div class="meta"><span>${esc((e.start_at || "").slice(5, 16).replace("T", " "))}</span><span>${esc(e.location || "")}</span></div></div><span class="tag">${esc(relDue(e.start_at))}</span><button class="link-btn" data-act="edit" data-type="event" data-id="${e.id}" title="编辑">${ico("edit", "sm")}</button><button class="link-btn del" data-act="event-del" data-id="${e.id}" title="删除">${ico("trash", "sm")}</button></div>`).join("");
   const canAdd = has("publish") || has("assign") || has("notice");
   const add = canAdd ? `<div class="addrow"><input class="ev_name grow" placeholder="活动名"><input class="ev_start" type="datetime-local"><input class="ev_place" placeholder="地点" style="width:130px">${dd("ev_kind", [["activity", "活动"], ["exam", "考试"], ["deadline", "截止"], ["course", "课程"]], "activity", "dd-sm")}<button class="btn primary sm" data-act="ev-add">${ico("plus", "sm")}</button></div>` : "";
   return `<div class="section"><div class="panel"><div class="panel-head"><h3>日程与活动</h3><span class="sub">${list.length} 项</span></div><div class="panel-body">${add}${rows || '<div class="empty"><b>暂无活动</b></div>'}</div></div></div>`;
@@ -547,6 +571,10 @@ async function onClick(e) {
   if (act === "event-del") { const ev = DB.events.find((x) => x.id === id); if (!ev) return; mutate("已删除活动", () => db.from("events").delete().eq("id", id), () => db.from("events").insert({ org_id: ev.org_id, user_id: ev.user_id, name: ev.name, start_at: ev.start_at, location: ev.location, kind: ev.kind })); return; }
   if (act === "ai-parse") { window.__aiParse(); return; }
   if (act === "ai-adopt") { const c = (S._ai || [])[+t.dataset.idx]; if (c) mutate("已采纳为待办", async () => { const { data } = await db.from("todos").insert({ user_id: user.id, scope: "personal", title: c.title, date: c.due || todayStr(), time: c.time || null, category: "学习", done: false }).select().single(); return data; }, (row) => db.from("todos").delete().eq("id", row.id)); return; }
+  if (act === "edit") { S.edit = { type: t.dataset.type, id: t.dataset.id }; render(); window.scrollTo({ top: 0 }); return; }
+  if (act === "edit-cancel") { S.edit = null; render(); return; }
+  if (act === "edit-save") { saveEdit(); return; }
+  if (act === "edit-delete") { deleteEdit(); return; }
   if (act === "day-prev") { S.dayOffset = (S.dayOffset || 0) - 1; render(); return; }
   if (act === "day-next") { S.dayOffset = (S.dayOffset || 0) + 1; render(); return; }
   if (act === "day-today") { S.dayOffset = 0; render(); return; }
