@@ -633,5 +633,31 @@ function bindGlobal() {
   document.addEventListener("input", (e) => { if (e.target.matches("#cmd input")) renderCmd(e.target.value); });
   setInterval(() => { if (S.view === "today") positionNowline(); }, 30000);
 }
+/* 快速编辑：单表更新 + 本地就地更新（避免全量重拉导致的延迟） */
+function saveEdit() {
+  const e = S.edit; if (!e) return; const box = $("#editbar"); const v = (s) => { const el = box && box.querySelector(s); return el ? el.value : ""; };
+  const MAP = { todo: "todos", homework: "homework", notice: "notices", event: "events", schedule: "schedule" };
+  let patch = null;
+  if (e.type === "todo") patch = { title: v(".e-title"), date: v(".e-date") || null, time: v(".e-time") || null };
+  else if (e.type === "homework") patch = { course: v(".e-course"), title: v(".e-title"), due: v(".e-due") ? v(".e-due") + ":00" : null, state: ddv("e_state") };
+  else if (e.type === "notice") patch = { title: v(".e-title"), body: v(".e-body"), source: v(".e-source") };
+  else if (e.type === "event") patch = { name: v(".e-title"), start_at: v(".e-start") ? v(".e-start") + ":00" : null, location: v(".e-place"), kind: ddv("e_kind") };
+  else if (e.type === "schedule") patch = { name: v(".e-title"), location: v(".e-room"), weekday: +ddv("e_day"), period_start: +ddv("e_s"), period_end: +ddv("e_e") };
+  if (!patch) return; const table = MAP[e.type];
+  (async () => {
+    try { const { error } = await db.from(table).update(patch).eq("id", e.id); if (error) throw error; const it = DB[table].find((x) => x.id === e.id); if (it) Object.assign(it, patch); S.edit = null; render(); toast("已保存", null, null, "ok"); }
+    catch (err) { toast("保存失败：" + (err.message || err), null, null, "err"); }
+  })();
+}
+function deleteEdit() {
+  const e = S.edit; if (!e) return; const MAP = { todo: "todos", homework: "homework", notice: "notices", event: "events", schedule: "schedule" }; const table = MAP[e.type]; if (!table) return;
+  (async () => {
+    try {
+      if (e.type === "notice") { const { error } = await db.from("notices").update({ audience: { deleted: true } }).eq("id", e.id); if (error) throw error; }
+      else { const { error } = await db.from(table).delete().eq("id", e.id); if (error) throw error; }
+      DB[table] = DB[table].filter((x) => x.id !== e.id); S.edit = null; render(); toast("已删除", null, null, "ok");
+    } catch (err) { toast("删除失败：" + (err.message || err), null, null, "err"); }
+  })();
+}
 applyTheme(localStorage.getItem("scut.theme") || "light");
 initAuth();
