@@ -235,10 +235,30 @@ function parseRule(text) {
   });
   return out;
 }
-window.__aiParse = function () {
+async function aiParseByKey(text) {
+  const key = store.prefs.aiKey; if (!key) return null;
+  const model = store.prefs.aiModel || "deepseek-chat";
+  const sys = "你是校园事务信息抽取器。把用户文本拆成待办数组，只输出 JSON 数组，每项 {title,due(YYYY-MM-DD 或空),time(HH:mm 或空)}。不要编造日期。";
+  try {
+    const r = await fetch("https://api.deepseek.com/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
+      body: JSON.stringify({ model, temperature: 0.2, messages: [{ role: "system", content: sys }, { role: "user", content: text }] })
+    });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const c = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || "";
+    const m = c.match(/\[[\s\S]*\]/); if (!m) return null;
+    const arr = JSON.parse(m[0]); if (!Array.isArray(arr)) return null;
+    return arr.map((x) => ({ title: String(x.title || "").slice(0, 40), due: x.due || "", time: x.time || "", conf: 0.92 }));
+  } catch (e) { return null; }
+}
+window.__aiParse = async function () {
   const txt = $("#ai-input").value.trim(); if (!txt) { toast("先粘一段文字"); return; }
-  const cands = parseRule(txt);
-  $("#ai-out").innerHTML = `<div class="rule"></div><div class="muted" style="font-size:12px;margin-bottom:8px">解析出 ${cands.length} 条候选（规则引擎 · 未配置 key）</div>` +
+  let cands = null, byAi = false;
+  if (store.prefs.aiKey) { cands = await aiParseByKey(txt); byAi = !!cands; }
+  if (!cands) cands = parseRule(txt);
+  $("#ai-out").innerHTML = `<div class="rule"></div><div class="muted" style="font-size:12px;margin-bottom:8px">解析出 ${cands.length} 条候选（${byAi ? "AI 模型" : "规则引擎（未配置 key 或调用失败自动降级）"}）</div>` +
     cands.map((c, i) => `<div class="row"><span class="tag ${c.conf > .8 ? "green" : "amber"}">${Math.round(c.conf * 100)}%</span><div class="grow"><div class="title">${esc(c.title)}</div><div class="meta">${c.due ? "截止 " + esc(c.due) + (c.time ? " " + c.time : "") : "未识别截止时间"}</div></div><button class="btn sm primary" data-act="ai-adopt" data-idx="${i}">采纳</button></div>`).join("");
   S._aiCands = cands;
 };
