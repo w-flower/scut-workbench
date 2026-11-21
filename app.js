@@ -136,8 +136,10 @@ window.__doLogin = async function () {
   user = data.user; await afterLogin();
 };
 window.__doLogout = async function () { await db.auth.signOut(); location.reload(); };
+function skeletonHTML() { return `<div class="sk-wrap"><div class="sk-line w40"></div><div class="sk-block"></div><div class="sk-line w60"></div><div class="sk-block"></div></div>`; }
 async function afterLogin() {
   $("#login").style.display = "none"; $("#app").style.visibility = "visible";
+  $("#content").innerHTML = skeletonHTML();
   await loadAll();
   await seedIfEmpty();
   S.ready = true;
@@ -186,13 +188,31 @@ function renderTop() {
   $("#rolewrap").innerHTML = `<span class="rl">身份</span><select id="roleSel">${opts}</select>`;
   $("#roleSel").onchange = (e) => { S.roleIdx = +e.target.value; if (!visibleViews().some((v2) => v2.id === S.view)) S.view = "today"; render(); };
 }
+function countUp(el) {
+  const t = el.textContent.trim(); const m = t.match(/^(\d+)$/); if (!m) return;
+  const to = +m[1]; if (!to || to > 9999) return;
+  const start = performance.now(); const dur = 620;
+  const step = (now) => { const p = Math.min(1, (now - start) / dur); el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(step); else el.textContent = to; };
+  requestAnimationFrame(step);
+}
+function animateEntrance() {
+  if (matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const kids = [...document.querySelectorAll("#content > *")];
+  kids.forEach((el, i) => { el.style.animation = "fadeUp .34s var(--ease) both"; el.style.animationDelay = Math.min(i * 40, 200) + "ms"; });
+  const items = [...document.querySelectorAll("#content .row, #content .hw-card, #content .ov-i, #content .stat")];
+  items.forEach((el, i) => { el.style.animation = "fadeUp .3s var(--ease) both"; el.style.animationDelay = Math.min(i * 26, 220) + "ms"; });
+  document.querySelectorAll("#content .ov-i b, #content .stat .num").forEach(countUp);
+}
 function render() {
   if (!S.ready) return;
   DB.identity = DB.identity || { campus: DEMO.user.campus, termStart: DEMO.user.termStart };
   renderNav(); renderTop();
   const fn = ({ today: vToday, homework: vHomework, schedule: vSchedule, affairs: vAffairs, notices: vNotices, events: vEvents, focus: vFocus, settings: vSettings })[S.view] || vToday;
+  const changed = S._lastView !== S.view;
   $("#content").innerHTML = fn();
   bindView();
+  if (changed) animateEntrance();
+  S._lastView = S.view;
 }
 function setView(id) { S.view = id; history.replaceState(null, "", "#" + id); render(); window.scrollTo({ top: 0 }); }
 
@@ -226,10 +246,12 @@ function vToday() {
   const flowHtml = flow.length ? flow.map((it) =>
     `<div class="row"><button class="check" data-act="todo-toggle" data-id="${it.kind === "todo" ? it.id : ""}" aria-pressed="false" aria-label="完成" ${it.kind === "homework" ? 'data-kind="hw" data-hwid="' + it.id + '"' : ""}>${ico("check", "sm")}</button>
       <div class="grow"><div class="title">${esc(it.title)}</div><div class="meta"><span class="tag ${dayDiff(it.date) < 0 ? "red" : dayDiff(it.date) <= 1 ? "amber" : ""}">${esc(relDue(it.date))}${it.time ? " · " + it.time : ""}</span>${it.sub ? `<span class="sub">${esc(it.sub)}</span>` : ""}${it.cat ? `<span class="tag">${esc(it.cat)}</span>` : ""}</div></div>
-      <button class="link-btn" data-act="view" data-id="${it.kind === "homework" ? "homework" : "today"}">${it.kind === "homework" ? "去提交" : "查看"}</button></div>`).join("")
+      <button class="link-btn" data-act="view" data-id="${it.kind === "homework" ? "homework" : "today"}">${it.kind === "homework" ? "去提交" : "查看"}</button>${it.kind === "todo" ? `<button class="link-btn del" data-act="todo-del" data-id="${it.id}" title="删除">${ico("trash", "sm")}</button>` : ""}</div>`).join("")
     : `<div class="empty"><b>今天没有临近截止</b>可以松一口气。</div>`;
   const banner = nt ? `<div class="nextband"><span class="nb-k">下一件事</span><span class="nb-t">${esc(nt.title)}</span><span class="nb-d">${esc(relDue(nt.at.slice(0, 10)))}${fmtHM(nt.at) ? " · " + fmtHM(nt.at) : ""}</span></div>` : "";
-  return `${banner}
+  const c = counts();
+  const overview = `<div class="ov"><div class="ov-i"><b class="num">${c.today}</b><span>今日待办</span></div><div class="ov-i"><b class="num">${c.homework}</b><span>作业待交</span></div><div class="ov-i"><b class="num">${c.notices}</b><span>未读通知</span></div></div>`;
+  return `${banner}${overview}
   <div class="today-grid">
     <div class="section">
       <div class="section-head"><h2>今日时间轴</h2><span class="sub">${new Date().toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" })}</span></div>
@@ -341,7 +363,7 @@ function vSchedule() {
     body += `<div class="tm num">${esc(s)}<span>第${n}节</span></div>`;
     for (let d = 1; d <= 7; d++) {
       const cs = DB.schedule.filter((c) => c.weekday === d && c.period_start === n);
-      body += `<div class="cell ${d === todayW ? "today" : ""}">${cs.map((c) => `<div class="ev" title="${esc(c.name)}${c.location ? " · " + esc(c.location) : ""}"><b>${esc(c.name)}</b>${c.location ? `<span>${esc(c.location)}</span>` : ""}</div>`).join("")}</div>`;
+      body += `<div class="cell ${d === todayW ? "today" : ""}">${cs.map((c) => `<div class="ev" data-act="sc-del" data-id="${c.id}" title="${esc(c.name)}${c.location ? " · " + esc(c.location) : ""}（点击删除）"><b>${esc(c.name)}</b>${c.location ? `<span>${esc(c.location)}</span>` : ""}</div>`).join("")}</div>`;
     }
   });
   return `<div class="section">
@@ -407,7 +429,7 @@ function vNotices() {
 function vEvents() {
   const list = DB.events.slice().sort((a, b) => String(a.start_at).localeCompare(String(b.start_at)));
   const kn = { exam: "考试", activity: "活动", deadline: "截止", course: "课程" };
-  const rows = list.map((e) => `<div class="row"><span class="tag ${e.kind === "exam" || e.kind === "deadline" ? "red" : "blue"}">${kn[e.kind] || "活动"}</span><div class="grow"><div class="title">${esc(e.name)}</div><div class="meta"><span>${esc((e.start_at || "").slice(5, 16).replace("T", " "))}</span><span>${esc(e.location || "")}</span></div></div><span class="tag">${esc(relDue(e.start_at))}</span></div>`).join("");
+  const rows = list.map((e) => `<div class="row"><span class="tag ${e.kind === "exam" || e.kind === "deadline" ? "red" : "blue"}">${kn[e.kind] || "活动"}</span><div class="grow"><div class="title">${esc(e.name)}</div><div class="meta"><span>${esc((e.start_at || "").slice(5, 16).replace("T", " "))}</span><span>${esc(e.location || "")}</span></div></div><span class="tag">${esc(relDue(e.start_at))}</span><button class="link-btn del" data-act="event-del" data-id="${e.id}" title="删除">${ico("trash", "sm")}</button></div>`).join("");
   const canAdd = has("publish") || has("assign") || has("notice");
   const add = canAdd ? `<div class="addrow"><input class="ev_name grow" placeholder="活动名"><input class="ev_start" type="datetime-local"><input class="ev_place" placeholder="地点" style="width:130px"><select class="ev_kind"><option value="activity">活动</option><option value="exam">考试</option><option value="deadline">截止</option><option value="course">课程</option></select><button class="btn primary sm" data-act="ev-add">${ico("plus", "sm")}</button></div>` : "";
   return `<div class="section"><div class="panel"><div class="panel-head"><h3>日程与活动</h3><span class="sub">${list.length} 项</span></div><div class="panel-body">${add}${rows || '<div class="empty"><b>暂无活动</b></div>'}</div></div></div>`;
@@ -426,7 +448,7 @@ function vFocus() {
   const musicOn = !!DB.prefs?.music_on; const pl = DB.prefs?.playlist_id || "3098275264";
   const music = musicOn ? `<iframe style="border:0;width:100%;height:88px;border-radius:10px" src="https://music.163.com/outchain/player?type=0&id=${encodeURIComponent(pl)}&auto=0&height=66"></iframe>` : `<div class="sub">音乐已关闭</div>`;
   return `<div class="focus-wrap">
-    <div class="focus-clock"><div class="phase">专 注</div><div class="time num" id="focus-time">${pad(mm)}:${pad(ss)}</div><div class="rounds">已完成 ${FT.rounds} 轮 · ${esc(cur.name)}</div>
+    <div class="focus-clock ${FT.running ? "running" : ""}"><div class="phase">专 注</div><div class="time num" id="focus-time">${pad(mm)}:${pad(ss)}</div><div class="rounds">已完成 ${FT.rounds} 轮 · ${esc(cur.name)}</div>
       <div class="presets">${presetHtml}</div>
       <div class="focus-ctrl"><button class="btn primary" data-act="focus-toggle">${FT.running ? ico("pause") : ico("play")} ${FT.running ? "暂停" : "开始"}</button><button class="btn" data-act="focus-reset">${ico("reset")}复位</button></div></div>
     <div>
@@ -475,6 +497,9 @@ async function onClick(e) {
   if (act === "view") { setView(id); return; }
   if (act === "todo-toggle") { if (t.dataset.kind === "hw") { const h = DB.homework.find((x) => x.id === t.dataset.hwid); if (h) { mutate("作业标记已提交", () => db.from("homework").update({ state: "已提交" }).eq("id", h.id), () => db.from("homework").update({ state: h.state }).eq("id", h.id)); } return; } const todo = DB.todos.find((x) => x.id === id); if (!todo) return; mutate("已更新", () => db.from("todos").update({ done: !todo.done }).eq("id", id), () => db.from("todos").update({ done: todo.done }).eq("id", id)); return; }
   if (act === "todo-add") { addTodo(); return; }
+  if (act === "todo-del") { const x = DB.todos.find((t2) => t2.id === id); if (!x) return; mutate("已删除待办", () => db.from("todos").delete().eq("id", id), () => db.from("todos").insert({ user_id: user.id, scope: x.scope || "personal", title: x.title, date: x.date, time: x.time, category: x.category, important: x.important, done: x.done })); return; }
+  if (act === "sc-del") { const c = DB.schedule.find((s) => s.id === id); if (!c) return; mutate("已删除课程", () => db.from("schedule").delete().eq("id", id), () => db.from("schedule").insert({ user_id: user.id, name: c.name, weekday: c.weekday, period_start: c.period_start, period_end: c.period_end, location: c.location, weeks: c.weeks, color: c.color })); return; }
+  if (act === "event-del") { const ev = DB.events.find((x) => x.id === id); if (!ev) return; mutate("已删除活动", () => db.from("events").delete().eq("id", id), () => db.from("events").insert({ org_id: ev.org_id, user_id: ev.user_id, name: ev.name, start_at: ev.start_at, location: ev.location, kind: ev.kind })); return; }
   if (act === "ai-parse") { window.__aiParse(); return; }
   if (act === "ai-adopt") { const c = (S._ai || [])[+t.dataset.idx]; if (c) mutate("已采纳为待办", async () => { const { data } = await db.from("todos").insert({ user_id: user.id, scope: "personal", title: c.title, date: c.due || todayStr(), time: c.time || null, category: "学习", done: false }).select().single(); return data; }, (row) => db.from("todos").delete().eq("id", row.id)); return; }
   if (act === "hw-filter") { S.hwFilter = id; render(); return; }
