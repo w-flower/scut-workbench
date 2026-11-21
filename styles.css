@@ -32,6 +32,7 @@ html[data-theme="dark"]{
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 @keyframes pulseDot{0%,100%{opacity:1}50%{opacity:.35}}
 *{box-sizing:border-box}
+html,body{max-width:100%;overflow-x:hidden}
 @media (prefers-reduced-motion: reduce){*{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
@@ -277,4 +278,14 @@ a:hover{text-decoration:underline;text-underline-offset:3px}
   .mobilebar button{flex:1;height:44px;border-radius:8px;font-size:12px;color:var(--ink-2);font-weight:500}
   .mobilebar button:active{background:var(--surface-3)}
 }
-@media (max-width:560px){ .ov{grid-template-columns:1fr 1fr} .ov-i:last-child{display:none} }
+@media (max-width:560px){
+  .ov{grid-template-columns:repeat(3,1fr);gap:8px}
+  .ov-i{padding:10px 10px;gap:6px}
+  .ov-i b{font-size:19px}
+  .ov-i span{font-size:10.5px}
+  .topbar .icon-btn[data-act="theme-toggle"]{display:none}
+  .roleswitch .rl{display:none}
+  .roleswitch{padding:0 8px}
+  .roleswitch select{max-width:118px;font-size:12px}
+  .crumb .week{display:none}
+}
