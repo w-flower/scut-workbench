@@ -12,15 +12,14 @@
 <!-- 登录门 -->
 <div id="login">
   <div class="card">
-    <h1>SCUT 工作台</h1>
-    <p class="sub">多角色校园事务协作台 · 在线演示</p>
+    <div class="brand-row"><div class="mk">SC</div><div><h1>SCUT 工作台</h1><div class="sub2">多角色校园事务协作台 · 在线演示</div></div></div>
     <label>邮箱</label>
     <input id="lg-email" type="email" value="demo@scut.edu.cn" autocomplete="username">
     <label>密码</label>
     <input id="lg-pw" type="password" value="Demo#2026" autocomplete="current-password">
     <button class="primary" id="lg-btn" onclick="__doLogin()">登录</button>
     <div class="err" id="lg-err"></div>
-    <div class="hint">演示账号：<b>demo@scut.edu.cn</b> / <b>Demo#2026</b><br>本版本数据存于浏览器本地（localStorage），刷新不丢。</div>
+    <div class="hint">演示账号：<b>demo@scut.edu.cn</b> / <b>Demo#2026</b><br>数据存于 Supabase 云端，多设备登录同一账号即同步。</div>
   </div>
 </div>
 

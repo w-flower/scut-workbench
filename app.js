@@ -16,6 +16,7 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: t
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const dedupe = (a, k) => { const s = new Set(); return a.filter((x) => { const v = x[k]; if (s.has(v)) return false; s.add(v); return true; }); };
 const pad = (n) => String(n).padStart(2, "0");
 const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const todayStr = () => ymd(new Date());
@@ -90,8 +91,11 @@ async function loadAll() {
   ]);
   DB.memberships = mem.data || [];
   DB.todos = td.data || []; DB.homework = hw.data || []; DB.schedule = sc.data || [];
-  DB.notices = no.data || []; DB.events = ev.data || []; DB.collections = co.data || [];
-  DB.approvals = ap.data || []; DB.rosters = ro.data || []; DB.sessions = fs.data || [];
+  DB.notices = dedupe((no.data || []).filter((n) => !(n.audience && n.audience.deleted)), "title");
+  DB.events = ev.data || [];
+  DB.collections = dedupe((co.data || []).filter((c) => c.status !== "deleted"), "title");
+  DB.approvals = (ap.data || []).filter((a) => a.state !== "deleted");
+  DB.rosters = ro.data || []; DB.sessions = fs.data || [];
   DB.prefs = pf.data || {};
   if (DB.memberships.length && S.roleIdx >= DB.memberships.length) S.roleIdx = 0;
 }
@@ -132,7 +136,7 @@ window.__doLogin = async function () {
   const btn = $("#lg-btn"); const err = $("#lg-err"); err.textContent = "";
   btn.disabled = true; btn.innerHTML = '<span class="spin"></span>登录中…';
   const { data, error } = await db.auth.signInWithPassword({ email, password: pw });
-  if (error) { btn.disabled = false; btn.textContent = "登录"; err.textContent = "登录失败：" + (error.message || "账号或密码错误"); return; }
+  if (error) { btn.disabled = false; btn.textContent = "登录"; const m = /invalid login|invalid credentials/i.test(error.message || "") ? "账号或密码错误" : (error.message || "登录失败"); err.textContent = "登录失败：" + m; return; }
   user = data.user; await afterLogin();
 };
 window.__doLogout = async function () { await db.auth.signOut(); location.reload(); };
