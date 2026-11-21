@@ -265,7 +265,7 @@ function vToday() {
   let rows = "";
   DEMO.periods.forEach(([n, s], i) => {
     const block = cs.filter((c) => c.period_start <= n && c.period_end >= n)
-      .map((c) => `<div class="course"><b>${esc(c.name)}</b>${c.location ? `<span class="room">${ico("pin", "xs")}${esc(c.location)}</span>` : ""}</div>`).join("");
+      .map((c) => `<div class="course"><b>${esc(c.name)}</b>${c.location ? `<span class="room">${ico("pin", "xs")}${esc(c.location)}</span>` : ""}${c.period_end > c.period_start ? `<span class="room">第${c.period_start}-${c.period_end}节</span>` : ""}</div>`).join("");
     rows += `<div class="axis-row"><div class="axis-time num">${esc(s)}</div><div class="axis-slot">${block}</div></div>`;
   });
   const flow = flowItems(); const nt = nextThing();
@@ -390,8 +390,11 @@ function vSchedule() {
   DEMO.periods.forEach(([n, s], i) => {
     body += `<div class="tm num">${esc(s)}<span>第${n}节</span></div>`;
     for (let d = 1; d <= 7; d++) {
-      const cs = DB.schedule.filter((c) => c.weekday === d && c.period_start === n);
-      body += `<div class="cell ${d === todayW ? "today" : ""}">${cs.map((c) => `<div class="ev" data-act="sc-del" data-id="${c.id}" title="${esc(c.name)}${c.location ? " · " + esc(c.location) : ""}（点击删除）"><b>${esc(c.name)}</b>${c.location ? `<span>${esc(c.location)}</span>` : ""}</div>`).join("")}</div>`;
+      const startCs = DB.schedule.filter((c) => c.weekday === d && c.period_start === n);
+      const contCs = DB.schedule.filter((c) => c.weekday === d && c.period_start < n && c.period_end >= n);
+      const block = startCs.map((c) => `<div class="ev" data-act="sc-del" data-id="${c.id}" title="${esc(c.name)}${c.location ? " · " + esc(c.location) : ""}（点击删除）"><b>${esc(c.name)}</b>${c.location ? `<span>${esc(c.location)}</span>` : ""}${c.period_end > c.period_start ? `<em>第${c.period_start}-${c.period_end}节</em>` : ""}</div>`).join("");
+      const cont = contCs.map((c) => `<div class="ev cont" data-act="sc-del" data-id="${c.id}" title="续 ${esc(c.name)}"></div>`).join("");
+      body += `<div class="cell ${d === todayW ? "today" : ""}">${block}${cont}</div>`;
     }
   });
   return `<div class="section">
