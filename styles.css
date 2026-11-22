@@ -476,3 +476,6 @@ html[data-theme="dark"] .kapok .kp-sub{color:#B08A7E}
   .daynav .dv-date{min-width:0;flex:1;text-align:left}
   .daynav .dv-today{display:none}
 }
+
+/* 卡片内角落木棉一律关闭：多朵叠加会压在按钮上 */
+.section .kd,.panel .kd,.hw-card .kd,.set-block .kd,.nextband .kd,.ov-i .kd,.today-grid .kd{display:none!important}

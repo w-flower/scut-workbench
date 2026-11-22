@@ -297,7 +297,7 @@ function decorateIcons() {
   document.querySelectorAll("#content .panel-head h3, #content .section-head h2, #content .set-block h3").forEach((h) => { if (h.querySelector(".hd-ic")) return; const s = document.createElement("span"); s.className = "hd-ic"; s.innerHTML = ico(pick(h.textContent), "sm"); h.prepend(s); });
   document.querySelectorAll("#content .section-head h2, #content .panel-head h3").forEach((h) => { if (h.querySelector(".kac")) return; const s = document.createElement("span"); s.className = "kac"; s.setAttribute("aria-hidden", "true"); s.innerHTML = kapokArt(); h.prepend(s); });
   document.querySelectorAll("#content .empty").forEach((el) => { if (el.querySelector(".em-ic")) return; const d = document.createElement("div"); d.className = "em-ic"; d.innerHTML = kapokArt(); el.prepend(d); });
-  document.querySelectorAll("#content .section, #content .panel, #content .set-block, #content .hw-card, #content .nextband, #content .ov-i, #content .today-grid").forEach((pn) => { if (pn.querySelector(":scope > .kd")) return; const s = document.createElement("span"); s.className = "kd"; s.setAttribute("aria-hidden", "true"); s.innerHTML = kapokArt(); pn.appendChild(s); });
+  // 卡片级角落木棉已移除：小卡片上多朵水印会叠在按钮上，改为只保留页面级（侧栏/登录卡/空状态）装饰
 }
 function mountKapokDeco() {
   const lc = document.querySelector("#login .card"); if (lc && !lc.querySelector(".kd-login")) { const s = document.createElement("span"); s.className = "kd kd-login"; s.setAttribute("aria-hidden", "true"); s.innerHTML = kapokArt(); lc.appendChild(s); }
