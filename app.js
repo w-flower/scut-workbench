@@ -349,7 +349,16 @@ function flowItems() {
   return items.sort((a, b) => ((a.date || "") + (a.time || "")).localeCompare((b.date || "") + (b.time || "")));
 }
 function kapokLine() { const m = new Date().getMonth() + 1; if (m >= 2 && m <= 4) return "木棉开了，红得像一整个春天。"; if (m >= 5 && m <= 7) return "木棉结絮，风一吹就是夏天。"; if (m >= 8 && m <= 10) return "木棉在枝头，攒着下一场春天。"; return "木棉落叶，为来年的红让路。"; }
-function kapokArt() { return `<svg viewBox="0 0 100 100" class="kp-svg"><defs><radialGradient id="kpg" cx="46%" cy="40%" r="68%"><stop offset="0" stop-color="#E9765C"/><stop offset=".55" stop-color="#C43A2B"/><stop offset="1" stop-color="#8E2A20"/></radialGradient><filter id="kpb"><feGaussianBlur stdDeviation="1.6"/></filter></defs><g filter="url(#kpb)" opacity="0.95" fill="url(#kpg)"><ellipse cx="50" cy="27" rx="12.5" ry="23"/><ellipse cx="50" cy="27" rx="12.5" ry="23" transform="rotate(72 50 50)"/><ellipse cx="50" cy="27" rx="12.5" ry="23" transform="rotate(144 50 50)"/><ellipse cx="50" cy="27" rx="12.5" ry="23" transform="rotate(216 50 50)"/><ellipse cx="50" cy="27" rx="12.5" ry="23" transform="rotate(288 50 50)"/></g><g stroke="#D89A3A" stroke-width="1.6" stroke-linecap="round" opacity=".9"><path d="M50 50l-9-8M50 50l9-8M50 50l-3.5-11M50 50l3.5-11M50 50v-12"/></g><circle cx="50" cy="50" r="3.2" fill="#E8B04B"/></svg>`; }
+function kapokArt() {
+  const P = "M60,63 C50,56 46,40 50,24 C52,15 56,9 60,6 C64,9 68,15 70,24 C74,40 70,56 60,63 Z";
+  const R = (a) => `transform="rotate(${a} 60 60)"`;
+  const pts = [[60,30],[44,36],[76,36],[35,47],[85,47],[49,52],[71,52],[41,42],[79,42]];
+  const petals = [0,72,144,216,288].map((a)=>`<path d="${P}" ${R(a)}/>`).join("");
+  const veins = [0,72,144,216,288].map((a)=>`<path d="M60,58 C58,44 58,28 60,14" ${R(a)}/>`).join("");
+  const stam = pts.map((p)=>`<line x1="60" y1="60" x2="${p[0]}" y2="${p[1]}"/>`).join("");
+  const dots = pts.map((p)=>`<circle cx="${p[0]}" cy="${p[1]}" r="2"/>`).join("");
+  return `<svg viewBox="0 0 120 120" class="kp-svg"><defs><linearGradient id="kpg4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F5805F"/><stop offset=".5" stop-color="#D64A31"/><stop offset="1" stop-color="#A3271A"/></linearGradient><radialGradient id="kpc4" cx="50%" cy="45%" r="55%"><stop offset="0" stop-color="#F8CB6B"/><stop offset="1" stop-color="#DB8420"/></radialGradient><filter id="kps4" x="-25%" y="-25%" width="150%" height="150%"><feGaussianBlur stdDeviation="2.6"/></filter></defs><g fill="#A3271A" opacity=".32" filter="url(#kps4)" transform="translate(61,62) scale(1.06) translate(-60,-61)">${petals}</g><g fill="url(#kpg4)">${petals}</g><g stroke="rgba(255,229,211,.4)" stroke-width="1.1" fill="none">${veins}</g><g stroke="#E8B04B" stroke-width="1.2" stroke-linecap="round" opacity=".92">${stam}</g><g fill="#F8CB6B">${dots}</g><circle cx="60" cy="60" r="6" fill="url(#kpc4)"/></svg>`;
+}
 function kapokCard() { return `<div class="kapok"><div class="kp-petals"><i></i><i></i><i></i><i></i><i></i></div><div class="kp-art">${kapokArt()}</div><div class="kp-txt"><div class="kp-kicker">KAPOK · 校花</div><h3 class="kp-line">${kapokLine()}</h3><div class="kp-sub">一树火红，是华工人的浪漫</div></div></div>`; }
 function vToday() {
   const ds = selDate(); const cs = DB.schedule.filter((c) => c.weekday === wdOf(ds)); const now = new Date();
