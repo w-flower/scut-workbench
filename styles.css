@@ -348,9 +348,9 @@ html[data-theme="dark"] .panel,html[data-theme="dark"] .set-block,html[data-them
 .dv-today{margin-left:4px;color:var(--brand-2);border-color:color-mix(in srgb,var(--brand) 24%,var(--line))}
 .dd-role .dd-menu{left:auto;right:0}
 /* topbar 防拥挤/防溢出 */
-.crumb{flex:1 1 auto;min-width:0;overflow:hidden}
-.crumb h1{overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.crumb .week{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crumb{flex:1 1 auto;min-width:0}
+.crumb h1{white-space:nowrap;flex:none}
+.crumb .week{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .roleswitch{min-width:0;max-width:160px;overflow:visible}
 .dd-role .dd-trigger{min-width:0;max-width:150px}
 .dd-role .dd-trigger .dd-val{display:block;max-width:118px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
