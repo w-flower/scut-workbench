@@ -312,6 +312,7 @@ function render() {
   if (!S.ready) return;
   DB.identity = DB.identity || { campus: DEMO.user.campus, termStart: DEMO.user.termStart };
   renderNav(); renderTop();
+  const _rf = $("#railFoot"); if (_rf) _rf.textContent = new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric", weekday: "long" });
   const fn = ({ today: vToday, homework: vHomework, schedule: vSchedule, affairs: vAffairs, notices: vNotices, events: vEvents, focus: vFocus, settings: vSettings })[S.view] || vToday;
   const changed = S._lastView !== S.view;
   $("#content").innerHTML = (S.edit ? editBar() : "") + fn();
