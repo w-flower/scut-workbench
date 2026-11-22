@@ -295,6 +295,7 @@ function decorateIcons() {
   const map = [["时间轴", "clock"], ["日程", "clock"], ["待处理", "inbox"], ["收件", "inbox"], ["作业", "homework"], ["课表", "grid"], ["收集", "inbox"], ["审批", "check"], ["名单", "users"], ["统计", "chart"], ["通知", "bell"], ["活动", "calendar"], ["专注", "timer"], ["账号", "user"], ["AI", "spark"], ["外观", "sun"], ["数据", "db"], ["我的角色", "users"], ["本周课表", "grid"], ["添加课程", "grid"], ["发布通知", "bell"], ["专注音乐", "music"], ["今日专注记录", "timer"]];
   const pick = (t) => { for (const [k, v] of map) if (t.includes(k)) return v; return "dot"; };
   document.querySelectorAll("#content .panel-head h3, #content .section-head h2, #content .set-block h3").forEach((h) => { if (h.querySelector(".hd-ic")) return; const s = document.createElement("span"); s.className = "hd-ic"; s.innerHTML = ico(pick(h.textContent), "sm"); h.prepend(s); });
+  document.querySelectorAll("#content .section-head h2, #content .panel-head h3").forEach((h) => { if (h.querySelector(".kac")) return; const s = document.createElement("span"); s.className = "kac"; s.setAttribute("aria-hidden", "true"); s.innerHTML = kapokArt(); h.prepend(s); });
   document.querySelectorAll("#content .empty").forEach((el) => { if (el.querySelector(".em-ic")) return; const d = document.createElement("div"); d.className = "em-ic"; d.innerHTML = kapokArt(); el.prepend(d); });
   document.querySelectorAll("#content .section, #content .panel, #content .set-block, #content .hw-card, #content .nextband, #content .ov-i, #content .today-grid").forEach((pn) => { if (pn.querySelector(":scope > .kd")) return; const s = document.createElement("span"); s.className = "kd"; s.setAttribute("aria-hidden", "true"); s.innerHTML = kapokArt(); pn.appendChild(s); });
 }
@@ -766,8 +767,8 @@ function initPetals() {
       p.y += p.sp; p.x += Math.sin(t / 1100 + p.phase) * p.sway * 0.6; p.rot += p.rotSp; p.flip += p.flipSp;
       if (p.y > window.innerHeight + 30) { Object.assign(p, mk(false)); }
       const sx = 0.35 + 0.65 * Math.abs(Math.cos(p.flip));
-      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(sx, 1); ctx.globalAlpha = p.a * (dk ? 0.4 : 1); ctx.fillStyle = p.c; path(p.r); ctx.fill();
-      ctx.globalAlpha = p.a * (dk ? 0.18 : 0.5); ctx.strokeStyle = "rgba(120,40,30,.5)"; ctx.lineWidth = Math.max(0.6, p.r * 0.07); ctx.beginPath(); ctx.moveTo(0, -p.r * 0.2); ctx.lineTo(0, -p.r * 1.55); ctx.stroke();
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(sx, 1); ctx.globalAlpha = p.a * (dk ? 0.4 : 0.68); ctx.fillStyle = p.c; path(p.r); ctx.fill();
+      ctx.globalAlpha = p.a * (dk ? 0.16 : 0.32); ctx.strokeStyle = "rgba(120,40,30,.5)"; ctx.lineWidth = Math.max(0.6, p.r * 0.07); ctx.beginPath(); ctx.moveTo(0, -p.r * 0.2); ctx.lineTo(0, -p.r * 1.55); ctx.stroke();
       ctx.restore();
     }
     requestAnimationFrame(frame);
