@@ -741,5 +741,29 @@ function deleteEdit() {
     } catch (err) { toast("删除失败：" + (err.message || err), null, null, "err"); }
   })();
 }
+function initPetals() {
+  const cv = document.getElementById("petals"); if (!cv) return;
+  try { if (matchMedia("(prefers-reduced-motion: reduce)").matches) return; } catch (e) {}
+  const ctx = cv.getContext("2d");
+  function resize() { const dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = window.innerWidth * dpr; cv.height = window.innerHeight * dpr; cv.style.width = window.innerWidth + "px"; cv.style.height = window.innerHeight + "px"; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  resize(); window.addEventListener("resize", resize);
+  const colors = ["#C0392B", "#D9563F", "#E07A5F", "#B5342A", "#E98B72"];
+  const N = Math.max(14, Math.min(26, Math.round(window.innerWidth / 60)));
+  const mk = (init) => ({ x: Math.random() * window.innerWidth, y: init ? Math.random() * window.innerHeight : -30, r: 5 + Math.random() * 7, sp: 0.35 + Math.random() * 0.85, sway: 0.6 + Math.random() * 1.3, phase: Math.random() * 6.28, rot: Math.random() * 6.28, rotSp: (Math.random() - 0.5) * 0.02, flip: Math.random() * 6.28, flipSp: 0.008 + Math.random() * 0.02, c: colors[(Math.random() * colors.length) | 0], a: 0.38 + Math.random() * 0.42 });
+  const petals = []; for (let i = 0; i < N; i++) petals.push(mk(true));
+  const path = (r) => { ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(r * 0.95, -r * 0.45, r * 1.05, -r * 1.25, 0, -r * 1.6); ctx.bezierCurveTo(-r * 1.05, -r * 1.25, -r * 0.95, -r * 0.45, 0, 0); ctx.closePath(); };
+  const frame = (t) => {
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    for (const p of petals) {
+      p.y += p.sp; p.x += Math.sin(t / 1100 + p.phase) * p.sway * 0.6; p.rot += p.rotSp; p.flip += p.flipSp;
+      if (p.y > window.innerHeight + 30) { Object.assign(p, mk(false)); }
+      const sx = 0.35 + 0.65 * Math.abs(Math.cos(p.flip));
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(sx, 1); ctx.globalAlpha = p.a; ctx.fillStyle = p.c; path(p.r); ctx.fill(); ctx.restore();
+    }
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
 applyTheme(localStorage.getItem("scut.theme") || "light");
+initPetals();
 initAuth();
