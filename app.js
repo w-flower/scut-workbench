@@ -301,6 +301,7 @@ function decorateIcons() {
 function mountKapokDeco() {
   const lc = document.querySelector("#login .card"); if (lc && !lc.querySelector(".kd-login")) { const s = document.createElement("span"); s.className = "kd kd-login"; s.setAttribute("aria-hidden", "true"); s.innerHTML = kapokArt(); lc.appendChild(s); }
   const rail = document.querySelector(".rail"); if (rail && !rail.querySelector(".kd-rail")) { const s = document.createElement("span"); s.className = "kd kd-rail"; s.setAttribute("aria-hidden", "true"); s.innerHTML = kapokArt(); rail.appendChild(s); }
+  const rt = document.querySelector(".rail-top"); if (rt && !rt.querySelector(".kd-railtop")) { const s = document.createElement("span"); s.className = "kd kd-railtop"; s.setAttribute("aria-hidden", "true"); s.innerHTML = kapokArt(); rt.appendChild(s); }
 }
 function editBar() {
   const e = S.edit; if (!e) return ""; let fields = "", title = "";
