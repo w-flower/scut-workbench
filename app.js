@@ -749,16 +749,18 @@ function initPetals() {
   resize(); window.addEventListener("resize", resize);
   const colors = ["#C0392B", "#D9563F", "#E07A5F", "#B5342A", "#E98B72"];
   const N = Math.max(60, Math.min(170, Math.round((window.innerWidth * window.innerHeight) / 8500)));
-  const mk = (init) => ({ x: Math.random() * window.innerWidth, y: init ? Math.random() * window.innerHeight : -30, r: 4 + Math.random() * 9, sp: 0.3 + Math.random() * 1.15, sway: 0.5 + Math.random() * 1.6, phase: Math.random() * 6.28, rot: Math.random() * 6.28, rotSp: (Math.random() - 0.5) * 0.025, flip: Math.random() * 6.28, flipSp: 0.006 + Math.random() * 0.022, c: colors[(Math.random() * colors.length) | 0], a: 0.3 + Math.random() * 0.5 });
+  const mk = (init) => ({ x: Math.random() * window.innerWidth, y: init ? Math.random() * window.innerHeight : -30, r: 4 + Math.random() * 7.5, sp: 0.3 + Math.random() * 1.15, sway: 0.5 + Math.random() * 1.6, phase: Math.random() * 6.28, rot: Math.random() * 6.28, rotSp: (Math.random() - 0.5) * 0.025, flip: Math.random() * 6.28, flipSp: 0.006 + Math.random() * 0.022, c: colors[(Math.random() * colors.length) | 0], a: 0.26 + Math.random() * 0.4 });
   const petals = []; for (let i = 0; i < N; i++) petals.push(mk(true));
-  const path = (r) => { ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(r * 0.95, -r * 0.45, r * 1.05, -r * 1.25, 0, -r * 1.6); ctx.bezierCurveTo(-r * 1.05, -r * 1.25, -r * 0.95, -r * 0.45, 0, 0); ctx.closePath(); };
+  const path = (r) => { ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(r * 0.6, -r * 0.55, r * 0.76, -r * 1.35, 0, -r * 1.95); ctx.bezierCurveTo(-r * 0.76, -r * 1.35, -r * 0.6, -r * 0.55, 0, 0); ctx.closePath(); };
   const frame = (t) => {
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
     for (const p of petals) {
       p.y += p.sp; p.x += Math.sin(t / 1100 + p.phase) * p.sway * 0.6; p.rot += p.rotSp; p.flip += p.flipSp;
       if (p.y > window.innerHeight + 30) { Object.assign(p, mk(false)); }
       const sx = 0.35 + 0.65 * Math.abs(Math.cos(p.flip));
-      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(sx, 1); ctx.globalAlpha = p.a; ctx.fillStyle = p.c; path(p.r); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(sx, 1); ctx.globalAlpha = p.a; ctx.fillStyle = p.c; path(p.r); ctx.fill();
+      ctx.globalAlpha = p.a * 0.5; ctx.strokeStyle = "rgba(120,40,30,.5)"; ctx.lineWidth = Math.max(0.6, p.r * 0.07); ctx.beginPath(); ctx.moveTo(0, -p.r * 0.2); ctx.lineTo(0, -p.r * 1.55); ctx.stroke();
+      ctx.restore();
     }
     requestAnimationFrame(frame);
   };
