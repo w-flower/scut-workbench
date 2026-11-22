@@ -270,9 +270,10 @@ function renderNav() {
 }
 function renderTop() {
   const v = VIEWS.find((x) => x.id === S.view) || VIEWS[0];
-  $("#crumb").innerHTML = `<h1>${v.name}</h1><span class="week">第 ${weekNo(DB.user?.termStart || DEMO.user.termStart)} 周 · ${esc(DB.identity?.campus || DEMO.user.campus)}</span>`;
-  const memOpts = DB.memberships.map((m, i) => [String(i), (m.roles?.name || "角色") + " · " + (m.orgs?.name || "")]);
-  $("#rolewrap").innerHTML = `<span class="rl">身份</span>` + dd("roleSel", memOpts.length ? memOpts : [["0", "普通学生"]], String(S.roleIdx), "dd-role");
+  $("#crumb").innerHTML = `<h1>${v.name}</h1><span class="week">第 ${weekNo(DB.user?.termStart || DEMO.user.termStart)} 周</span>`;
+  const mem = DB.memberships, cur = mem[S.roleIdx] || {};
+  const opts = mem.map((m, i) => `<div class="dd-opt" data-v="${i}" aria-selected="${i === S.roleIdx}"><span>${esc(m.roles?.name || "角色")} · ${esc(m.orgs?.name || "")}</span><span class="chk">${ico("check", "xs")}</span></div>`).join("");
+  $("#rolewrap").innerHTML = `<span class="rl">身份</span><div class="dd-wrap dd-role" data-dd="roleSel" data-value="${S.roleIdx}"><button type="button" class="dd-trigger"><span class="dd-val">${esc(cur.roles?.name || "身份")}</span><span class="chev">${ico("chevron", "xs")}</span></button><div class="dd-menu">${opts}</div></div>`;
 }
 function countUp(el) {
   const t = el.textContent.trim(); const m = t.match(/^(\d+)$/); if (!m) return;
