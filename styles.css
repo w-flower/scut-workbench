@@ -369,3 +369,10 @@ html[data-theme="dark"] .panel,html[data-theme="dark"] .set-block,html[data-them
 .editbar input{height:35px;border:1px solid var(--line);border-radius:var(--r-sm);padding:0 10px;background:var(--surface);font-size:12.5px;min-width:0}
 .editbar input:focus{border-color:var(--brand);outline:none;box-shadow:0 0 0 3px var(--brand-soft)}
 .editbar input.e-title{min-width:180px}
+
+/* mobile daynav wrap fix */
+@media (max-width:560px){
+  .section-head{flex-wrap:wrap;row-gap:8px}
+  .section-head .daynav{margin-left:0;width:100%;justify-content:flex-start;gap:6px}
+  .daynav .dv-date{min-width:0;flex:1;text-align:left}
+}
