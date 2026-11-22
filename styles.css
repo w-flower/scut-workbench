@@ -375,4 +375,5 @@ html[data-theme="dark"] .panel,html[data-theme="dark"] .set-block,html[data-them
   .section-head{flex-wrap:wrap;row-gap:8px}
   .section-head .daynav{margin-left:0;width:100%;justify-content:flex-start;gap:6px}
   .daynav .dv-date{min-width:0;flex:1;text-align:left}
+  .daynav .dv-today{display:none}
 }
