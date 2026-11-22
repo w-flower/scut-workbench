@@ -4,13 +4,70 @@
 */
 import { DEMO, DEMO_ACCOUNT } from "./demo-seed.js";
 
-/* ---------- Supabase ---------- */
-let createClient;
-try { ({ createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm")); }
-catch (e) { ({ createClient } = await import("https://esm.sh/@supabase/supabase-js@2")); }
+/* ---------- 内置极简 Supabase 客户端（纯 fetch，无任何外部依赖 / CDN） ---------- */
 const SUPABASE_URL = "https://nglgymxsnnlaqxvmvrxo.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbGd5bXhzbm5sYXF4dm12cnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM2MTAwNzYsImV4cCI6MjEwOTE4NjA3Nn0.qdFqI4WCp6kJcLQMqTwpAIdXOuxHOxTe_vHezyX8_6g";
-const db = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
+const AUTH_KEY = "scut.sb.session";
+function sbSession() { try { return JSON.parse(localStorage.getItem(AUTH_KEY) || "null"); } catch (e) { return null; } }
+function sbSet(s) { try { localStorage.setItem(AUTH_KEY, JSON.stringify(s)); localStorage.setItem("scut.auth", "1"); } catch (e) {} }
+async function sbSignIn(o) {
+  try {
+    const r = await fetch(SUPABASE_URL + "/auth/v1/token?grant_type=password", { method: "POST", headers: { apikey: SUPABASE_ANON, "Content-Type": "application/json" }, body: JSON.stringify({ email: o.email, password: o.password }) });
+    const j = await r.json();
+    if (!r.ok) return { data: {}, error: { message: j.error_description || j.msg || j.error || "登录失败" } };
+    sbSet({ access_token: j.access_token, refresh_token: j.refresh_token, user: j.user, exp: Date.now() + (j.expires_in || 3600) * 1000 });
+    return { data: { user: j.user }, error: null };
+  } catch (e) { return { data: {}, error: { message: String(e) } }; }
+}
+async function sbGetSession() {
+  const s = sbSession(); if (!s) return { data: { session: null } };
+  if (s.exp && Date.now() > s.exp - 60000 && s.refresh_token) {
+    try { const r = await fetch(SUPABASE_URL + "/auth/v1/token?grant_type=refresh_token", { method: "POST", headers: { apikey: SUPABASE_ANON, "Content-Type": "application/json" }, body: JSON.stringify({ refresh_token: s.refresh_token }) }); const j = await r.json(); if (r.ok) { sbSet({ access_token: j.access_token, refresh_token: j.refresh_token, user: j.user, exp: Date.now() + (j.expires_in || 3600) * 1000 }); return { data: { session: sbSession() } }; } } catch (e) {}
+    return { data: { session: null } };
+  }
+  try { localStorage.setItem("scut.auth", "1"); } catch (e) {}
+  return { data: { session: s } };
+}
+async function sbSignOut() { try { const s = sbSession(); if (s && s.access_token) await fetch(SUPABASE_URL + "/auth/v1/logout", { method: "POST", headers: { apikey: SUPABASE_ANON, Authorization: "Bearer " + s.access_token } }); } catch (e) {} try { localStorage.removeItem(AUTH_KEY); localStorage.removeItem("scut.auth"); } catch (e) {} }
+async function sbRun(st) {
+  const headers = { apikey: SUPABASE_ANON };
+  const s = sbSession(); if (s && s.access_token) headers.Authorization = "Bearer " + s.access_token;
+  if (st.body !== null) headers["Content-Type"] = "application/json";
+  if (st.prefer) headers.Prefer = st.prefer;
+  const params = [];
+  if (st.method === "GET") params.push("select=" + encodeURIComponent(st.select || "*"));
+  st.filters.forEach((f) => params.push(f));
+  st.order.forEach((o) => params.push("order=" + o));
+  if (st.limit) params.push("limit=" + st.limit);
+  const qs = params.length ? "?" + params.join("&") : "";
+  const opt = { method: st.method, headers };
+  if (st.body !== null) opt.body = JSON.stringify(st.body);
+  let r, txt, j = null;
+  try { r = await fetch(SUPABASE_URL + "/rest/v1/" + st.table + qs, opt); txt = await r.text(); try { j = txt ? JSON.parse(txt) : null; } catch (e) { j = null; } }
+  catch (e) { return { data: null, error: { message: String(e) } }; }
+  if (!r.ok) return { data: null, error: { message: (j && (j.message || j.details || j.hint)) || ("HTTP " + r.status), status: r.status } };
+  let data = j;
+  if (st.single) data = Array.isArray(j) ? (j[0] || null) : (j || null);
+  return { data, error: null, status: r.status };
+}
+function sbFrom(table) {
+  const st = { table, method: "GET", select: "*", filters: [], order: [], limit: null, body: null, prefer: null, single: false };
+  const b = {
+    select(cols) { st.select = cols || "*"; return b; },
+    order(col, o) { o = o || {}; st.order.push(col + (o.ascending === false ? ".desc" : ".asc") + (o.nullsFirst ? ".nullsfirst" : ".nullslast")); return b; },
+    limit(n) { st.limit = n; return b; },
+    eq(k, v) { st.filters.push(k + "=eq." + encodeURIComponent(v)); return b; },
+    single() { st.single = true; return b; },
+    maybeSingle() { st.single = "maybe"; return b; },
+    insert(x) { st.method = "POST"; st.body = x; st.prefer = "return=representation"; return b; },
+    upsert(x) { st.method = "POST"; st.body = x; st.prefer = "resolution=merge-duplicates,return=representation"; return b; },
+    update(x) { st.method = "PATCH"; st.body = x; st.prefer = "return=representation"; return b; },
+    delete() { st.method = "DELETE"; st.prefer = "return=representation"; return b; },
+    then(res, rej) { return sbRun(st).then(res, rej); }
+  };
+  return b;
+}
+const db = { auth: { getSession: sbGetSession, signInWithPassword: sbSignIn, signOut: sbSignOut }, from: sbFrom };
 
 /* ---------- utils ---------- */
 const $ = (s, r = document) => r.querySelector(s);
