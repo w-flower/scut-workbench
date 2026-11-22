@@ -296,7 +296,7 @@ function decorateIcons() {
   const pick = (t) => { for (const [k, v] of map) if (t.includes(k)) return v; return "dot"; };
   document.querySelectorAll("#content .panel-head h3, #content .section-head h2, #content .set-block h3").forEach((h) => { if (h.querySelector(".hd-ic")) return; const s = document.createElement("span"); s.className = "hd-ic"; s.innerHTML = ico(pick(h.textContent), "sm"); h.prepend(s); });
   document.querySelectorAll("#content .empty").forEach((el) => { if (el.querySelector(".em-ic")) return; const d = document.createElement("div"); d.className = "em-ic"; d.innerHTML = kapokArt(); el.prepend(d); });
-  document.querySelectorAll("#content .panel, #content .set-block, #content .hw-card").forEach((pn) => { if (pn.querySelector(":scope > .kd")) return; const s = document.createElement("span"); s.className = "kd"; s.setAttribute("aria-hidden", "true"); s.innerHTML = kapokArt(); pn.appendChild(s); });
+  document.querySelectorAll("#content .panel, #content .set-block, #content .hw-card, #content .nextband, #content .ov-i").forEach((pn) => { if (pn.querySelector(":scope > .kd")) return; const s = document.createElement("span"); s.className = "kd"; s.setAttribute("aria-hidden", "true"); s.innerHTML = kapokArt(); pn.appendChild(s); });
 }
 function mountKapokDeco() {
   const lc = document.querySelector("#login .card"); if (lc && !lc.querySelector(".kd-login")) { const s = document.createElement("span"); s.className = "kd kd-login"; s.setAttribute("aria-hidden", "true"); s.innerHTML = kapokArt(); lc.appendChild(s); }

@@ -386,9 +386,10 @@ html[data-theme="dark"] .panel,html[data-theme="dark"] .set-block,html[data-them
 .app{position:relative;z-index:1}
 /* static kapok decorations in corners */
 .panel,.set-block,.hw-card{position:relative}
-.kd{position:absolute;right:12px;bottom:10px;width:46px;height:46px;opacity:.07;pointer-events:none;z-index:0}
+.kd{position:absolute;right:12px;bottom:10px;width:46px;height:46px;opacity:.11;pointer-events:none;z-index:0}
 .kd .kp-svg{width:100%;height:100%}
-html[data-theme="dark"] .kd{opacity:.05}
+.nextband .kd,.ov-i .kd{width:34px;height:34px;right:10px;bottom:8px;opacity:.1}
+html[data-theme="dark"] .kd{opacity:.08}
 .kd-login{right:16px;bottom:14px;width:64px;height:64px;opacity:.09}
 html[data-theme="dark"] .kd-login{opacity:.06}
 .rail{position:relative}
