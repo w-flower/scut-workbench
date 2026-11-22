@@ -266,7 +266,7 @@ function renderNav() {
     `<button class="nav-item" data-act="view" data-id="settings" aria-current="${S.view === "settings" ? "page" : "false"}">${ico("settings")}<span>设置</span></button>`;
   // mobile bar
   const mb = $("#mobilebar");
-  if (mb) mb.innerHTML = ["today", "homework", "schedule", "affairs", "focus"].map((id) => { const v = VIEWS.find((x) => x.id === id); return v && visibleViews().some((y) => y.id === id) ? `<button data-act="view" data-id="${id}">${v.name}</button>` : ""; }).join("");
+  if (mb) mb.innerHTML = ["today", "homework", "schedule", "affairs", "focus", "settings"].map((id) => { const v = VIEWS.find((x) => x.id === id); const okv = v && (id === "settings" || visibleViews().some((y) => y.id === id)); return okv ? `<button data-act="view" data-id="${id}" aria-current="${S.view === id ? "page" : "false"}"><span class="mb-ic">${ico(v.icon, "sm")}</span><span>${v.name}</span></button>` : ""; }).join("");
 }
 function renderTop() {
   const v = VIEWS.find((x) => x.id === S.view) || VIEWS[0];
@@ -512,7 +512,14 @@ function tabApprove() {
 }
 function tabRoster() {
   const ros = DB.rosters; if (!ros.length) return `<div class="empty"><b>还没有名单</b></div>`;
-  return ros.map((r) => `<div class="section"><div class="section-head"><h2 style="font-size:13px">${esc(r.name)} · ${(r.members || []).length} 人</h2></div><div class="chips">${(r.members || []).map((n) => `<span class="tag">${esc(n)}</span>`).join("")}</div></div>`).join("");
+  const can = has("roster");
+  return ros.map((r) => {
+    const mem = r.members || [];
+    const chips = mem.map((n) => `<span class="tag">${esc(n)}${can ? `<button class="x" data-act="roster-del" data-id="${r.id}" data-name="${encodeURIComponent(n)}" title="移除">×</button>` : ""}</span>`).join("");
+    return `<div class="section"><div class="section-head"><h2 style="font-size:13px">${esc(r.name)} · ${mem.length} 人</h2></div>
+      ${can ? `<div class="addrow"><input class="roster-new grow" placeholder="输入姓名，回车添加"><button class="btn sm" data-act="roster-add" data-id="${r.id}">${ico("plus", "sm")}添加</button></div>` : ""}
+      <div class="chips">${chips || '<span class="muted">暂无成员</span>'}</div></div>`;
+  }).join("");
 }
 function tabStats() {
   const hw = DB.homework.length, hwDone = DB.homework.filter((h) => h.state === "已提交").length;
@@ -579,7 +586,10 @@ function vSettings() {
   <div class="set-block"><h3>AI 设置（BYOK）</h3><div class="bd"><label>API Key（只存本机浏览器）</label><input id="st-aikey" placeholder="sk-..." value="${esc(aiKey)}"><label>模型</label><input id="st-model" value="${esc(DB.prefs?.ai_model || "deepseek-chat")}"><div class="sub">不填 key 时「AI 整理」走内置规则引擎，照样能用。</div><div><button class="btn sm primary" data-act="save-ai">保存</button></div></div></div>
   <div class="set-block"><h3>外观</h3><div class="bd"><div class="filters"><button class="chip" data-act="theme" data-id="light" aria-pressed="${(localStorage.getItem("scut.theme") || "light") === "light"}">浅色</button><button class="chip" data-act="theme" data-id="dark" aria-pressed="${localStorage.getItem("scut.theme") === "dark"}">深色</button></div></div></div>
   <div class="set-block"><h3>数据</h3><div class="bd"><div class="filters"><button class="btn sm" data-act="export">导出 JSON</button><button class="btn sm danger" data-act="reset">重置本账号演示数据</button></div></div></div>
-  <div class="set-block"><h3>我的角色</h3><div class="bd">${DB.memberships.map((m) => `<div class="row"><div class="grow"><div class="title">${esc(m.roles?.name || "")} · ${esc(m.orgs?.name || "")}</div><div class="meta">${(m.roles?.capabilities || []).map((c) => `<span class="tag">${c}</span>`).join("")}</div></div></div>`).join("")}</div></div>`;
+  <div class="set-block"><h3>我的角色 / 自定义身份</h3><div class="bd">${DB.memberships.map((m) => `<div class="row"><div class="grow"><div class="title">${esc(m.roles?.name || "")} · ${esc(m.orgs?.name || "")}</div><div class="meta">${(m.roles?.capabilities || []).map((c) => `<span class="tag">${c}</span>`).join("")}</div></div></div>`).join("")}
+    <div class="rule"></div><div class="sub">新建自定义身份（保存后出现在顶部身份切换里；能力用逗号分隔：own, collect, notice, roster, approve, stats, assign 等）</div>
+    <div class="addrow"><input class="ci-name" placeholder="身份名称，如：学习委员" style="width:150px"><input class="ci-caps grow" placeholder="能力：own,collect,notice"><button class="btn sm primary" data-act="role-add">新建身份</button></div>
+  </div></div>`;
 }
 
 /* ---------- mutations ---------- */
@@ -594,12 +604,13 @@ async function mutate(label, fn, undo) {
 }
 function bindView() {
   if (S.view === "today") { setTimeout(positionNowline, 30); const i = $("#tq-title"); if (i) i.onkeydown = (e) => { if (e.key === "Enter") addTodo(); }; }
+  if (S.view === "affairs") { $$(".roster-new").forEach((inp) => (inp.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); document.querySelector('[data-act="roster-add"]')?.click(); } })); }
 
   applyTheme(localStorage.getItem("scut.theme") || "light");
 }
 function addTodo() { const i = $("#tq-title"); const v = i && i.value.trim(); if (!v) return; mutate("已添加待办", async () => { const { data } = await db.from("todos").insert({ user_id: user.id, scope: "personal", title: v, date: todayStr(), category: "学习", done: false }).select().single(); return data; }, (row) => db.from("todos").delete().eq("id", row.id)); }
 async function onClick(e) {
-  const ddt = e.target.closest("[data-dd-trigger]");
+  const ddt = e.target.closest(".dd-trigger");
   if (ddt) { const w = ddt.closest(".dd-wrap"); const open = w.classList.contains("open"); document.querySelectorAll(".dd-wrap.open").forEach((x) => x.classList.remove("open")); if (!open) w.classList.add("open"); return; }
   const ddo = e.target.closest(".dd-opt");
   if (ddo) { const w = ddo.closest(".dd-wrap"); w.dataset.value = ddo.dataset.v; w.querySelector(".dd-val").textContent = ddo.querySelector("span").textContent; w.querySelectorAll(".dd-opt").forEach((x) => x.setAttribute("aria-selected", x === ddo)); w.classList.remove("open"); handleDD(w.dataset.dd, ddo.dataset.v); return; }
@@ -618,6 +629,9 @@ async function onClick(e) {
   if (act === "edit-cancel") { S.edit = null; render(); return; }
   if (act === "edit-save") { saveEdit(); return; }
   if (act === "edit-delete") { deleteEdit(); return; }
+  if (act === "roster-add") { const rid = t.dataset.id; const inp = document.querySelector(".roster-new"); const nm = (inp && inp.value || "").trim(); if (!nm) { toast("先输入姓名"); return; } const r = DB.rosters.find((x) => x.id === rid); if (!r) return; const members = (r.members || []).concat([nm]); (async () => { try { const { error } = await db.from("rosters").update({ members }).eq("id", rid); if (error) throw error; r.members = members; if (inp) inp.value = ""; render(); toast("已添加成员", null, null, "ok"); } catch (e) { toast("添加失败：" + (e.message || e), null, null, "err"); } })(); return; }
+  if (act === "roster-del") { const rid = t.dataset.id; const nm = decodeURIComponent(t.dataset.name || ""); const r = DB.rosters.find((x) => x.id === rid); if (!r) return; const members = (r.members || []).filter((n) => n !== nm); (async () => { try { const { error } = await db.from("rosters").update({ members }).eq("id", rid); if (error) throw error; r.members = members; render(); toast("已移除", null, null, "ok"); } catch (e) { toast("移除失败：" + (e.message || e), null, null, "err"); } })(); return; }
+  if (act === "role-add") { const nm = ((document.querySelector(".ci-name") || {}).value || "").trim(); const capsRaw = ((document.querySelector(".ci-caps") || {}).value || "own").trim(); const caps = capsRaw.split(/[,，\s]+/).filter(Boolean); if (!nm) { toast("先填身份名称"); return; } (async () => { try { const { data: role, error } = await db.from("roles").insert({ org_type: "class", key: "custom", name: nm, is_preset: false, capabilities: caps.length ? caps : ["own"], owner_user: user.id }).select().single(); if (error) throw error; const org = classOrg(); const orgName = (DB.memberships.find((m) => m.org_id === org)?.orgs?.name) || "班级"; const { error: e2 } = await db.from("memberships").insert({ org_id: org, user_id: user.id, role_id: role.id, title: nm + " · " + orgName }); if (e2) throw e2; await loadAll(); S.roleIdx = Math.max(0, DB.memberships.length - 1); render(); toast("已新建身份：" + nm, null, null, "ok"); } catch (e) { toast("新建失败：" + (e.message || e), null, null, "err"); } })(); return; }
   if (act === "day-prev") { S.dayOffset = (S.dayOffset || 0) - 1; render(); return; }
   if (act === "day-next") { S.dayOffset = (S.dayOffset || 0) + 1; render(); return; }
   if (act === "day-today") { S.dayOffset = 0; render(); return; }
