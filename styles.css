@@ -377,6 +377,11 @@ html[data-theme="dark"] .panel,html[data-theme="dark"] .set-block,html[data-them
 .tag{position:relative}
 .tag .x{border:0;background:none;color:var(--muted);cursor:pointer;margin-left:3px;font-size:13px;line-height:1;padding:0 1px}
 .tag .x:hover{color:var(--danger)}
+/* collection detail */
+.cdetail{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line-2)}
+.cdetail .cd-h{font-size:12px;font-weight:600;margin-bottom:6px}
+.cdetail .chips{gap:5px}
+@media (max-width:560px){ .cdetail{grid-template-columns:1fr} }
 /* inline edit */
 .editbar{border-color:color-mix(in srgb,var(--brand) 30%,var(--line))!important;background:color-mix(in srgb,var(--brand-soft) 45%,var(--surface))!important;margin-bottom:16px}
 .editbar-h{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--brand-2);font-weight:600}

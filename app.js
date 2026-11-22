@@ -138,7 +138,7 @@ const ico = (n, cls = "") => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hi
 /* ---------- state ---------- */
 let user = null;
 const DB = { memberships: [], todos: [], homework: [], schedule: [], notices: [], events: [], collections: [], approvals: [], rosters: [], sessions: [], prefs: {} };
-const S = { view: "today", roleIdx: 0, hwFilter: "undone", affairTab: null, ready: false, dayOffset: 0, edit: null };
+const S = { view: "today", roleIdx: 0, hwFilter: "undone", affairTab: null, ready: false, dayOffset: 0, edit: null, detailCollection: null };
 const capCache = () => (DB.memberships[S.roleIdx] && DB.memberships[S.roleIdx].roles && DB.memberships[S.roleIdx].roles.capabilities) || ["own"];
 const has = (c) => capCache().includes(c);
 const curM = () => DB.memberships[S.roleIdx] || { title: "普通学生", org_id: null, roles: { name: "普通学生", capabilities: ["own"] }, orgs: { name: "" } };
@@ -159,7 +159,7 @@ function toast(msg, actionLabel, action, kind = "") {
 
 /* ---------- data ---------- */
 async function loadAll() {
-  const [mem, td, hw, sc, no, ev, co, ap, ro, fs, pf] = await Promise.all([
+  const [mem, td, hw, sc, no, ev, co, ap, ro, fs, pf, cr] = await Promise.all([
     db.from("memberships").select("id,org_id,role_id,title,status,roles(name,capabilities,key),orgs(name)").eq("status", "active"),
     db.from("todos").select("*").order("date", { nullsFirst: false }).order("time"),
     db.from("homework").select("*").order("due", { nullsFirst: false }),
@@ -170,7 +170,8 @@ async function loadAll() {
     db.from("approvals").select("*"),
     db.from("rosters").select("*"),
     db.from("focus_sessions").select("*").order("finished_at", { ascending: false }).limit(200),
-    db.from("prefs").select("*").maybeSingle()
+    db.from("prefs").select("*").maybeSingle(),
+    db.from("collection_responses").select("collection_id,payload")
   ]);
   DB.memberships = mem.data || [];
   DB.todos = td.data || []; DB.homework = hw.data || []; DB.schedule = sc.data || [];
@@ -179,7 +180,7 @@ async function loadAll() {
   DB.collections = dedupe((co.data || []).filter((c) => c.status !== "deleted"), "title");
   DB.approvals = (ap.data || []).filter((a) => a.state !== "deleted");
   DB.rosters = ro.data || []; DB.sessions = fs.data || [];
-  DB.prefs = pf.data || {};
+  DB.prefs = pf.data || {}; DB.responses = cr.data || [];
   if (DB.memberships.length && S.roleIdx >= DB.memberships.length) S.roleIdx = 0;
 }
 async function refresh() { await loadAll(); render(); }
@@ -303,6 +304,7 @@ function editBar() {
   else if (e.type === "notice") { const x = DB.notices.find((n) => n.id === e.id); if (!x) return ""; title = "编辑通知"; fields = `<input class="e-title grow" value="${esc(x.title)}"><input class="e-body grow" value="${esc(x.body || "")}"><input class="e-source" value="${esc(x.source || "")}" style="width:110px">`; }
   else if (e.type === "event") { const x = DB.events.find((ev) => ev.id === e.id); if (!x) return ""; title = "编辑活动"; fields = `<input class="e-title grow" value="${esc(x.name)}"><input class="e-start" type="datetime-local" value="${(x.start_at || "").slice(0, 16)}"><input class="e-place" value="${esc(x.location || "")}" style="width:120px">${dd("e_kind", [["activity", "活动"], ["exam", "考试"], ["deadline", "截止"], ["course", "课程"]], x.kind || "activity", "dd-sm")}`; }
   else if (e.type === "schedule") { const x = DB.schedule.find((s) => s.id === e.id); if (!x) return ""; title = "编辑课程"; fields = `<input class="e-title grow" value="${esc(x.name)}"><input class="e-room" value="${esc(x.location || "")}" style="width:130px">${dd("e_day", weekdayName.slice(1).map((w, i) => [String(i + 1), w]), String(x.weekday), "dd-sm")}${dd("e_s", DEMO.periods.map(([n]) => [String(n), "第" + n + "节"]), String(x.period_start), "dd-sm")}${dd("e_e", DEMO.periods.map(([n]) => [String(n), "到" + n + "节"]), String(x.period_end), "dd-sm")}`; }
+  else if (e.type === "collection") { const x = DB.collections.find((c) => c.id === e.id); if (!x) return ""; title = "编辑收集"; fields = `<input class="e-title grow" value="${esc(x.title)}"><input class="e-total" type="number" value="${x.total || 0}" style="width:100px"><input class="e-due" type="date" value="${(x.due || "").slice(0, 10)}">`; }
   else return "";
   return `<div class="panel editbar" id="editbar"><div class="panel-body"><div class="editbar-h">${ico("edit", "sm")}<b>${title}</b></div><div class="addrow" style="padding:9px 0 0">${fields}<button class="btn primary sm" data-act="edit-save">保存</button><button class="btn sm danger" data-act="edit-delete">删除</button><button class="btn sm" data-act="edit-cancel">取消</button></div></div></div>`;
 }
@@ -500,10 +502,18 @@ function vAffairs() {
     <div class="filters" style="margin-bottom:14px">${tabHtml}</div>
     <div class="panel"><div class="panel-body">${body}</div></div></div>`;
 }
+function respNames(cid) { return (DB.responses || []).filter((r) => r.collection_id === cid).map((r) => (r.payload && r.payload.name) || "").filter(Boolean); }
+function rosterMembers() { const r = (DB.rosters || []).find((x) => (x.name || "").indexOf("班级") === 0) || (DB.rosters || [])[0]; return r ? (r.members || []) : []; }
 function tabCollect() {
-  const rows = DB.collections.length ? DB.collections.map((c) => { const pct = c.total ? Math.round((c.got || 0) / c.total * 100) : 0; return `<div class="row"><div class="grow"><div class="title">${esc(c.title)}</div><div class="meta"><span>截止 ${esc(c.due || "—")}</span><span>${esc((c.fields || []).join(" / "))}</span></div>
-    <div class="progress-line" style="margin-top:6px"><b class="num">${c.got || 0}/${c.total}</b><div class="progress-track"><i style="width:${pct}%"></i></div>${(c.got || 0) >= c.total ? '<span class="tag green">已收齐</span>' : `<span class="tag red">还差 ${c.total - (c.got || 0)}</span>`}</div></div>
-    <button class="link-btn" data-act="collect-remind" data-id="${c.id}">生成催办</button></div>`; }).join("") : `<div class="empty"><b>暂无收集任务</b></div>`;
+  const roster = rosterMembers();
+  const rows = DB.collections.length ? DB.collections.map((c) => {
+    const sub = respNames(c.id); const got = sub.length; const pct = c.total ? Math.round(got / c.total * 100) : 0;
+    const miss = roster.filter((n) => sub.indexOf(n) < 0);
+    const detail = S.detailCollection === c.id ? `<div class="cdetail"><div><div class="cd-h">已交 ${got}</div><div class="chips">${sub.length ? sub.map((n) => `<span class="tag green">${esc(n)}</span>`).join("") : '<span class="sub">暂无回执</span>'}</div></div><div><div class="cd-h">未交 ${miss.length}</div><div class="chips">${roster.length ? (miss.length ? miss.map((n) => `<span class="tag red">${esc(n)}</span>`).join("") : '<span class="tag green">已收齐</span>') : '<span class="sub">未导入班级名单</span>'}</div></div></div>` : "";
+    return `<div class="row" style="align-items:flex-start"><div class="grow"><div class="title">${esc(c.title)}</div><div class="meta"><span>截止 ${esc(c.due || "—")}</span><span>${esc((c.fields || []).join(" / "))}</span></div>
+      <div class="progress-line" style="margin-top:6px"><b class="num">${got}/${c.total}</b><div class="progress-track"><i style="width:${pct}%"></i></div>${got >= c.total ? '<span class="tag green">已收齐</span>' : `<span class="tag red">还差 ${c.total - got}</span>`}</div>${detail}</div>
+      <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end;flex:none"><button class="link-btn" data-act="collect-detail" data-id="${c.id}">${S.detailCollection === c.id ? "收起" : "查看明细"}</button><button class="link-btn" data-act="collect-edit" data-id="${c.id}">编辑</button><button class="link-btn" data-act="collect-remind" data-id="${c.id}">生成催办</button></div></div>`;
+  }).join("") : `<div class="empty"><b>暂无收集任务</b></div>`;
   return `<div class="addrow"><input class="co_title grow" placeholder="收集任务名"><input class="co_total" type="number" placeholder="总人数" style="width:110px"><button class="btn primary sm" data-act="collect-add">${ico("plus", "sm")}发起收集</button></div><div>${rows}</div>`;
 }
 function tabApprove() {
@@ -642,6 +652,8 @@ async function onClick(e) {
   if (act === "sc-add") { const name = $(".sc_name").value.trim(); if (!name) { toast("填课程名"); return; } const s = +(ddv("sc_s") || 1), en = Math.max(s, +(ddv("sc_e") || s)), wd = +(ddv("sc_day") || 1); mutate("已添加课程", () => db.from("schedule").insert({ user_id: user.id, name, weekday: wd, period_start: s, period_end: en, location: $(".sc_room").value.trim() || "待定", weeks: "3-16" }), null); return; }
   if (act === "affair-tab") { S.affairTab = id; render(); return; }
   if (act === "collect-add") { const title = $(".co_title").value.trim(); if (!title) { toast("填任务名"); return; } const total = +($(".co_total").value || 0) || 50; mutate("已发起收集", () => db.from("collections").insert({ org_id: orgWithCap("collect"), title, fields: ["姓名"], due: todayStr(), total, status: "open" }), null); return; }
+  if (act === "collect-detail") { S.detailCollection = S.detailCollection === id ? null : id; render(); return; }
+  if (act === "collect-edit") { S.edit = { type: "collection", id }; render(); window.scrollTo({ top: 0 }); return; }
   if (act === "collect-remind") { const c = DB.collections.find((x) => x.id === id); toast("催办：" + (c ? c.title : "") + " 还差 " + (c ? (c.total - (c.got || 0)) : 0) + " 人，请尽快提交"); return; }
   if (act === "approve-ok") { const a = DB.approvals.find((x) => x.id === id); if (!a) return; mutate("已通过审批", () => db.from("approvals").update({ state: "已通过" }).eq("id", id), () => db.from("approvals").update({ state: a.state }).eq("id", id)); return; }
   if (act === "notice-read") { const n = DB.notices.find((x) => x.id === id); if (!n) return; mutate("已标记", () => db.from("notices").update({ read: !n.read }).eq("id", id), () => db.from("notices").update({ read: n.read }).eq("id", id)); return; }
@@ -694,13 +706,14 @@ function bindGlobal() {
 /* 快速编辑：单表更新 + 本地就地更新（避免全量重拉导致的延迟） */
 function saveEdit() {
   const e = S.edit; if (!e) return; const box = $("#editbar"); const v = (s) => { const el = box && box.querySelector(s); return el ? el.value : ""; };
-  const MAP = { todo: "todos", homework: "homework", notice: "notices", event: "events", schedule: "schedule" };
+  const MAP = { todo: "todos", homework: "homework", notice: "notices", event: "events", schedule: "schedule", collection: "collections" };
   let patch = null;
   if (e.type === "todo") patch = { title: v(".e-title"), date: v(".e-date") || null, time: v(".e-time") || null };
   else if (e.type === "homework") patch = { course: v(".e-course"), title: v(".e-title"), due: v(".e-due") ? v(".e-due") + ":00" : null, state: ddv("e_state") };
   else if (e.type === "notice") patch = { title: v(".e-title"), body: v(".e-body"), source: v(".e-source") };
   else if (e.type === "event") patch = { name: v(".e-title"), start_at: v(".e-start") ? v(".e-start") + ":00" : null, location: v(".e-place"), kind: ddv("e_kind") };
   else if (e.type === "schedule") patch = { name: v(".e-title"), location: v(".e-room"), weekday: +ddv("e_day"), period_start: +ddv("e_s"), period_end: +ddv("e_e") };
+  else if (e.type === "collection") patch = { title: v(".e-title"), total: +(v(".e-total") || 0), due: v(".e-due") || null };
   if (!patch) return; const table = MAP[e.type];
   (async () => {
     try { const { error } = await db.from(table).update(patch).eq("id", e.id); if (error) throw error; const it = DB[table].find((x) => x.id === e.id); if (it) Object.assign(it, patch); S.edit = null; render(); toast("已保存", null, null, "ok"); }
@@ -708,10 +721,11 @@ function saveEdit() {
   })();
 }
 function deleteEdit() {
-  const e = S.edit; if (!e) return; const MAP = { todo: "todos", homework: "homework", notice: "notices", event: "events", schedule: "schedule" }; const table = MAP[e.type]; if (!table) return;
+  const e = S.edit; if (!e) return; const MAP = { todo: "todos", homework: "homework", notice: "notices", event: "events", schedule: "schedule", collection: "collections" }; const table = MAP[e.type]; if (!table) return;
   (async () => {
     try {
       if (e.type === "notice") { const { error } = await db.from("notices").update({ audience: { deleted: true } }).eq("id", e.id); if (error) throw error; }
+      else if (e.type === "collection") { const { error } = await db.from("collections").update({ status: "deleted" }).eq("id", e.id); if (error) throw error; }
       else { const { error } = await db.from(table).delete().eq("id", e.id); if (error) throw error; }
       DB[table] = DB[table].filter((x) => x.id !== e.id); S.edit = null; render(); toast("已删除", null, null, "ok");
     } catch (err) { toast("删除失败：" + (err.message || err), null, null, "err"); }
