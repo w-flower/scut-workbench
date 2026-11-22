@@ -357,8 +357,14 @@ function vToday() {
     : `<div class="empty"><b>今天没有临近截止</b>可以松一口气。</div>`;
   const banner = nt ? `<div class="nextband"><span class="nb-k">下一件事</span><span class="nb-t">${esc(nt.title)}</span><span class="nb-d">${esc(relDue(nt.at.slice(0, 10)))}${fmtHM(nt.at) ? " · " + fmtHM(nt.at) : ""}</span></div>` : "";
   const c = counts();
+  const _h = new Date().getHours();
+  const _hi = _h < 6 ? "夜深了" : _h < 11 ? "早上好" : _h < 13 ? "中午好" : _h < 18 ? "下午好" : "晚上好";
+  const _ps = ["做点什么？", "看看该做什么？", "整理一下今天的内容吧", "看看明天的计划", "今天想先推进哪件事？", "要不要先把最近的截止清一下？"];
+  const _now = new Date(); const _doy = Math.floor((_now - new Date(_now.getFullYear(), 0, 0)) / 86400000);
+  const _p = _ps[(_doy + Math.floor(_h / 6)) % _ps.length];
+  const greet = `<div class="greet"><h2>${_hi}！</h2><p class="g-sub">${_p}</p></div>`;
   const overview = `<div class="ov"><div class="ov-i"><b class="num">${c.today}</b><span>今日待办</span></div><div class="ov-i"><b class="num">${c.homework}</b><span>作业待交</span></div><div class="ov-i"><b class="num">${c.notices}</b><span>未读通知</span></div></div>`;
-  return `${banner}${overview}
+  return `${greet}${banner}${overview}
   <div class="today-grid">
     <div class="section">
       <div class="section-head"><h2>日程</h2><div class="daynav"><button class="dv" data-act="day-prev" aria-label="前一天">${ico("chevron", "xs")}</button><span class="dv-date">${new Date(ds + "T00:00:00").toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" })}</span><button class="dv next" data-act="day-next" aria-label="后一天">${ico("chevron", "xs")}</button><button class="dv-today" data-act="day-today">今天</button></div></div>

@@ -377,6 +377,10 @@ html[data-theme="dark"] .panel,html[data-theme="dark"] .set-block,html[data-them
 .tag{position:relative}
 .tag .x{border:0;background:none;color:var(--muted);cursor:pointer;margin-left:3px;font-size:13px;line-height:1;padding:0 1px}
 .tag .x:hover{color:var(--danger)}
+/* greeting */
+.greet{margin:2px 0 18px}
+.greet h2{font-size:24px;font-weight:700;letter-spacing:-.02em;margin:0 0 3px;color:var(--ink)}
+.greet .g-sub{font-size:13.5px;color:var(--muted);margin:0}
 /* collection detail */
 .cdetail{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line-2)}
 .cdetail .cd-h{font-size:12px;font-weight:600;margin-bottom:6px}
