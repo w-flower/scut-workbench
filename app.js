@@ -349,15 +349,36 @@ function flowItems() {
   return items.sort((a, b) => ((a.date || "") + (a.time || "")).localeCompare((b.date || "") + (b.time || "")));
 }
 function kapokLine() { const m = new Date().getMonth() + 1; if (m >= 2 && m <= 4) return "木棉开了，红得像一整个春天。"; if (m >= 5 && m <= 7) return "木棉结絮，风一吹就是夏天。"; if (m >= 8 && m <= 10) return "木棉在枝头，攒着下一场春天。"; return "木棉落叶，为来年的红让路。"; }
+let __kpSeq = 0;
 function kapokArt() {
-  const P = "M60,63 C50,56 46,40 50,24 C52,15 56,9 60,6 C64,9 68,15 70,24 C74,40 70,56 60,63 Z";
-  const R = (a) => `transform="rotate(${a} 60 60)"`;
-  const pts = [[60,30],[44,36],[76,36],[35,47],[85,47],[49,52],[71,52],[41,42],[79,42]];
-  const petals = [0,72,144,216,288].map((a)=>`<path d="${P}" ${R(a)}/>`).join("");
-  const veins = [0,72,144,216,288].map((a)=>`<path d="M60,58 C58,44 58,28 60,14" ${R(a)}/>`).join("");
-  const stam = pts.map((p)=>`<line x1="60" y1="60" x2="${p[0]}" y2="${p[1]}"/>`).join("");
-  const dots = pts.map((p)=>`<circle cx="${p[0]}" cy="${p[1]}" r="2"/>`).join("");
-  return `<svg viewBox="0 0 120 120" class="kp-svg"><defs><linearGradient id="kpg4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EE5A38"/><stop offset=".5" stop-color="#C4271A"/><stop offset="1" stop-color="#8C1B10"/></linearGradient><radialGradient id="kpc4" cx="50%" cy="45%" r="55%"><stop offset="0" stop-color="#F8CB6B"/><stop offset="1" stop-color="#DB8420"/></radialGradient><filter id="kps4" x="-25%" y="-25%" width="150%" height="150%"><feGaussianBlur stdDeviation="2.6"/></filter></defs><g fill="#A3271A" opacity=".32" filter="url(#kps4)" transform="translate(61,62) scale(1.06) translate(-60,-61)">${petals}</g><g fill="url(#kpg4)">${petals}</g><g stroke="rgba(255,229,211,.4)" stroke-width="1.1" fill="none">${veins}</g><g stroke="#E8B04B" stroke-width="1.2" stroke-linecap="round" opacity=".92">${stam}</g><g fill="#F8CB6B">${dots}</g><circle cx="60" cy="60" r="6" fill="url(#kpc4)"/></svg>`;
+  // 木棉（红棉）：五片宽厚花瓣交叠、瓣间有压痕阴影、瓣内一条淡中脉、
+  // 中心一束金黄花蕊。刻意避开“尖瓣放射”的星芒观感。
+  const uid = "kp" + (++__kpSeq);
+  const P = "M60,66 C50,64.5 43.5,56 43.5,45 C43.5,35 48,26.5 55,23.6 C57,22.8 58.6,23.8 60,25.6 C61.4,23.8 63,22.8 65,23.6 C72,26.5 76.5,35 76.5,45 C76.5,56 70,64.5 60,66 Z";
+  const A = [-6, 66, 138, 210, 282];
+  const rot = (a, inner) => `<g transform="rotate(${a} 60 60)">${inner}</g>`;
+  const petals = A.map((a) => `<path d="${P}" transform="rotate(${a} 60 60)"/>`).join("");
+  // 每片花瓣右侧压痕（被相邻瓣压住的暗边），制造厚度与层次
+  const fold = A.map((a) => rot(a, '<path d="M60,66 C70,64.5 76.5,56 76.5,45" fill="none" stroke="rgba(96,20,12,.1)" stroke-width="12" stroke-linecap="round"/>')).join("");
+  const veins = "";
+  let stam = "";
+  for (let i = 0; i < 11; i++) {
+    const a = ((-164 + i * (148 / 10)) * Math.PI) / 180;
+    const L = 16 + (i % 3) * 2.4;
+    const x = 60 + Math.cos(a) * L;
+    const y = 60 + Math.sin(a) * L;
+    const cx = (60 + x) / 2 + Math.cos(a + 1.57) * 1.4;
+    const cy = (60 + y) / 2 + Math.sin(a + 1.57) * 1.4;
+    stam += `<path d="M60,62 Q${cx.toFixed(1)},${cy.toFixed(1)} ${x.toFixed(1)},${y.toFixed(1)}" stroke="#DFA24E" stroke-width="1.05"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.4" fill="#F7CE78" stroke="none"/>`;
+  }
+  for (let i = 0; i < 3; i++) {
+    const a = ((-12 + i * 24) * Math.PI) / 180;
+    const L = 9 + (i % 2) * 2;
+    const x = 60 + Math.cos(a) * L;
+    const y = 60 + Math.sin(a) * L;
+    stam += `<path d="M60,63 Q${((60 + x) / 2).toFixed(1)},${((63 + y) / 2).toFixed(1)} ${x.toFixed(1)},${y.toFixed(1)}" stroke="#DFA24E" stroke-width=".9" opacity=".7"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.15" fill="#F7CE78" stroke="none" opacity=".8"/>`;
+  }
+  return `<svg viewBox="0 0 120 120" class="kp-svg"><defs><radialGradient id="${uid}g" cx="50%" cy="66%" r="58%"><stop offset="0" stop-color="#8B1C12"/><stop offset=".38" stop-color="#CC2F1C"/><stop offset=".74" stop-color="#E2512E"/><stop offset="1" stop-color="#EC6340"/></radialGradient><radialGradient id="${uid}c" cx="50%" cy="38%" r="58%"><stop offset="0" stop-color="#FDE9B6"/><stop offset=".5" stop-color="#F1B54D"/><stop offset="1" stop-color="#D4812A"/></radialGradient></defs><g transform="translate(60,60) scale(1.18) translate(-60,-60)"><g fill="url(#${uid}g)" stroke="#7E1710" stroke-opacity=".16" stroke-width="1">${petals}</g>${fold}${veins}${stam}<circle cx="60" cy="62" r="6.4" fill="rgba(120,32,18,.18)"/><circle cx="60" cy="62" r="4.2" fill="url(#${uid}c)" opacity=".96"/><circle cx="60" cy="62" r="4.2" fill="none" stroke="#A0501B" stroke-opacity=".45" stroke-width=".9"/></g></svg>`;
 }
 function kapokCard() { return `<div class="kapok"><div class="kp-petals"><i></i><i></i><i></i><i></i><i></i></div><div class="kp-art">${kapokArt()}</div><div class="kp-txt"><div class="kp-kicker">KAPOK · 校花</div><h3 class="kp-line">${kapokLine()}</h3><div class="kp-sub">一树火红，是华工人的浪漫</div></div></div>`; }
 function vToday() {
