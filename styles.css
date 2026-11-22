@@ -384,6 +384,18 @@ html[data-theme="dark"] .panel,html[data-theme="dark"] .set-block,html[data-them
 /* falling kapok petals (canvas) */
 #petals{position:fixed;inset:0;width:100%;height:100%;z-index:10;pointer-events:none}
 .app{position:relative;z-index:1}
+/* static kapok decorations in corners */
+.panel,.set-block,.hw-card{position:relative}
+.kd{position:absolute;right:12px;bottom:10px;width:46px;height:46px;opacity:.07;pointer-events:none;z-index:0}
+.kd .kp-svg{width:100%;height:100%}
+html[data-theme="dark"] .kd{opacity:.05}
+.kd-login{right:16px;bottom:14px;width:64px;height:64px;opacity:.09}
+html[data-theme="dark"] .kd-login{opacity:.06}
+.rail{position:relative}
+.kd-rail{right:12px;bottom:46px;width:74px;height:74px;opacity:.05;z-index:0}
+html[data-theme="dark"] .kd-rail{opacity:.04}
+.empty .em-ic{opacity:.5}
+.empty .em-ic .kp-svg{width:34px;height:34px}
 /* kapok feature card */
 .kapok{position:relative;overflow:hidden;margin:4px 0 18px;border:1px solid #F1DED8;border-radius:16px;padding:16px 22px;display:flex;align-items:center;gap:20px;background:linear-gradient(120deg,#FFF7F3 0%,#FFFBFA 55%,#FDF3EF 100%)}
 .kapok .kp-art{width:88px;height:88px;flex:none;filter:drop-shadow(0 6px 14px rgba(196,58,43,.16))}
