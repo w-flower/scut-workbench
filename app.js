@@ -748,8 +748,8 @@ function initPetals() {
   function resize() { const dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = window.innerWidth * dpr; cv.height = window.innerHeight * dpr; cv.style.width = window.innerWidth + "px"; cv.style.height = window.innerHeight + "px"; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
   resize(); window.addEventListener("resize", resize);
   const colors = ["#C0392B", "#D9563F", "#E07A5F", "#B5342A", "#E98B72"];
-  const N = Math.max(14, Math.min(26, Math.round(window.innerWidth / 60)));
-  const mk = (init) => ({ x: Math.random() * window.innerWidth, y: init ? Math.random() * window.innerHeight : -30, r: 5 + Math.random() * 7, sp: 0.35 + Math.random() * 0.85, sway: 0.6 + Math.random() * 1.3, phase: Math.random() * 6.28, rot: Math.random() * 6.28, rotSp: (Math.random() - 0.5) * 0.02, flip: Math.random() * 6.28, flipSp: 0.008 + Math.random() * 0.02, c: colors[(Math.random() * colors.length) | 0], a: 0.38 + Math.random() * 0.42 });
+  const N = Math.max(60, Math.min(170, Math.round((window.innerWidth * window.innerHeight) / 8500)));
+  const mk = (init) => ({ x: Math.random() * window.innerWidth, y: init ? Math.random() * window.innerHeight : -30, r: 4 + Math.random() * 9, sp: 0.3 + Math.random() * 1.15, sway: 0.5 + Math.random() * 1.6, phase: Math.random() * 6.28, rot: Math.random() * 6.28, rotSp: (Math.random() - 0.5) * 0.025, flip: Math.random() * 6.28, flipSp: 0.006 + Math.random() * 0.022, c: colors[(Math.random() * colors.length) | 0], a: 0.3 + Math.random() * 0.5 });
   const petals = []; for (let i = 0; i < N; i++) petals.push(mk(true));
   const path = (r) => { ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(r * 0.95, -r * 0.45, r * 1.05, -r * 1.25, 0, -r * 1.6); ctx.bezierCurveTo(-r * 1.05, -r * 1.25, -r * 0.95, -r * 0.45, 0, 0); ctx.closePath(); };
   const frame = (t) => {
