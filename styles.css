@@ -381,6 +381,26 @@ html[data-theme="dark"] .panel,html[data-theme="dark"] .set-block,html[data-them
 .greet{margin:2px 0 18px}
 .greet h2{font-size:24px;font-weight:700;letter-spacing:-.02em;margin:0 0 3px;color:var(--ink)}
 .greet .g-sub{font-size:13.5px;color:var(--muted);margin:0}
+/* kapok feature card */
+.kapok{position:relative;overflow:hidden;margin:4px 0 18px;border:1px solid #F1DED8;border-radius:16px;padding:16px 22px;display:flex;align-items:center;gap:20px;background:linear-gradient(120deg,#FFF7F3 0%,#FFFBFA 55%,#FDF3EF 100%)}
+.kapok .kp-art{width:88px;height:88px;flex:none;filter:drop-shadow(0 6px 14px rgba(196,58,43,.16))}
+.kapok .kp-svg{width:88px;height:88px}
+.kapok .kp-txt{min-width:0;flex:1}
+.kapok .kp-kicker{font-size:10.5px;letter-spacing:.28em;color:#B5654F;font-weight:600;margin-bottom:7px}
+.kapok .kp-line{font-family:"Source Han Serif SC","Noto Serif SC","Songti SC","STSong","SimSun",serif;font-size:21px;line-height:1.35;color:#8E2A20;font-weight:600;margin:0 0 5px;letter-spacing:.01em}
+.kapok .kp-sub{font-size:12px;color:#A0796B}
+.kapok .kp-petals i{position:absolute;top:-10px;width:9px;height:9px;background:#E07A5F;border-radius:50% 0 50% 50%;opacity:0;animation:petalFall 6.5s linear infinite}
+.kapok .kp-petals i:nth-child(1){left:78%;animation-delay:.2s}
+.kapok .kp-petals i:nth-child(2){left:64%;animation-delay:2.1s;width:7px;height:7px}
+.kapok .kp-petals i:nth-child(3){left:88%;animation-delay:3.7s;width:6px;height:6px}
+.kapok .kp-petals i:nth-child(4){left:52%;animation-delay:1.3s;width:8px;height:8px}
+.kapok .kp-petals i:nth-child(5){left:93%;animation-delay:5s;width:7px;height:7px}
+@keyframes petalFall{0%{transform:translateY(0) rotate(0);opacity:0}15%{opacity:.6}100%{transform:translateY(130px) rotate(160deg);opacity:0}}
+html[data-theme="dark"] .kapok{background:linear-gradient(120deg,#241715,#1d1413 55%,#241a17);border-color:#3a2621}
+html[data-theme="dark"] .kapok .kp-line{color:#F0B4A6}
+html[data-theme="dark"] .kapok .kp-kicker{color:#C98A79}
+html[data-theme="dark"] .kapok .kp-sub{color:#B08A7E}
+@media (max-width:560px){ .kapok{padding:14px 16px;gap:12px} .kapok .kp-art,.kapok .kp-svg{width:64px;height:64px} .kapok .kp-line{font-size:17px} }
 /* collection detail */
 .cdetail{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line-2)}
 .cdetail .cd-h{font-size:12px;font-weight:600;margin-bottom:6px}

@@ -341,6 +341,9 @@ function flowItems() {
   DB.homework.filter((h) => h.state !== "已提交" && h.due && dayDiff(h.due) <= 2).forEach((h) => items.push({ kind: "homework", id: h.id, title: h.title, sub: h.course, date: h.due.slice(0, 10), time: fmtHM(h.due), cat: "作业", ref: h }));
   return items.sort((a, b) => ((a.date || "") + (a.time || "")).localeCompare((b.date || "") + (b.time || "")));
 }
+function kapokLine() { const m = new Date().getMonth() + 1; if (m >= 2 && m <= 4) return "木棉开了，红得像一整个春天。"; if (m >= 5 && m <= 7) return "木棉结絮，风一吹就是夏天。"; if (m >= 8 && m <= 10) return "木棉在枝头，攒着下一场春天。"; return "木棉落叶，为来年的红让路。"; }
+function kapokArt() { return `<svg viewBox="0 0 100 100" class="kp-svg"><defs><radialGradient id="kpg" cx="46%" cy="40%" r="68%"><stop offset="0" stop-color="#E9765C"/><stop offset=".55" stop-color="#C43A2B"/><stop offset="1" stop-color="#8E2A20"/></radialGradient><filter id="kpb"><feGaussianBlur stdDeviation="1.6"/></filter></defs><g filter="url(#kpb)" opacity="0.95" fill="url(#kpg)"><ellipse cx="50" cy="27" rx="12.5" ry="23"/><ellipse cx="50" cy="27" rx="12.5" ry="23" transform="rotate(72 50 50)"/><ellipse cx="50" cy="27" rx="12.5" ry="23" transform="rotate(144 50 50)"/><ellipse cx="50" cy="27" rx="12.5" ry="23" transform="rotate(216 50 50)"/><ellipse cx="50" cy="27" rx="12.5" ry="23" transform="rotate(288 50 50)"/></g><g stroke="#D89A3A" stroke-width="1.6" stroke-linecap="round" opacity=".9"><path d="M50 50l-9-8M50 50l9-8M50 50l-3.5-11M50 50l3.5-11M50 50v-12"/></g><circle cx="50" cy="50" r="3.2" fill="#E8B04B"/></svg>`; }
+function kapokCard() { return `<div class="kapok"><div class="kp-petals"><i></i><i></i><i></i><i></i><i></i></div><div class="kp-art">${kapokArt()}</div><div class="kp-txt"><div class="kp-kicker">KAPOK · 华工校花</div><h3 class="kp-line">${kapokLine()}</h3><div class="kp-sub">木棉是华南理工的校花 · 一树火红，是华工人的浪漫</div></div></div>`; }
 function vToday() {
   const ds = selDate(); const cs = DB.schedule.filter((c) => c.weekday === wdOf(ds)); const now = new Date();
   let rows = "";
@@ -364,7 +367,7 @@ function vToday() {
   const _p = _ps[(_doy + Math.floor(_h / 6)) % _ps.length];
   const greet = `<div class="greet"><h2>${_hi}！</h2><p class="g-sub">${_p}</p></div>`;
   const overview = `<div class="ov"><div class="ov-i"><b class="num">${c.today}</b><span>今日待办</span></div><div class="ov-i"><b class="num">${c.homework}</b><span>作业待交</span></div><div class="ov-i"><b class="num">${c.notices}</b><span>未读通知</span></div></div>`;
-  return `${greet}${banner}${overview}
+  return `${greet}${kapokCard()}${banner}${overview}
   <div class="today-grid">
     <div class="section">
       <div class="section-head"><h2>日程</h2><div class="daynav"><button class="dv" data-act="day-prev" aria-label="前一天">${ico("chevron", "xs")}</button><span class="dv-date">${new Date(ds + "T00:00:00").toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" })}</span><button class="dv next" data-act="day-next" aria-label="后一天">${ico("chevron", "xs")}</button><button class="dv-today" data-act="day-today">今天</button></div></div>
