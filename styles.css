@@ -385,11 +385,15 @@ html[data-theme="dark"] .panel,html[data-theme="dark"] .set-block,html[data-them
 #petals{position:fixed;inset:0;width:100%;height:100%;z-index:10;pointer-events:none}
 .app{position:relative;z-index:1}
 /* static kapok decorations in corners */
-.panel,.set-block,.hw-card{position:relative}
-.kd{position:absolute;right:12px;bottom:10px;width:46px;height:46px;opacity:.11;pointer-events:none;z-index:0}
+.panel,.set-block,.hw-card,.section,.today-grid{position:relative}
+.kd{position:absolute;right:12px;bottom:10px;width:54px;height:54px;opacity:.17;pointer-events:none;z-index:0}
 .kd .kp-svg{width:100%;height:100%}
-.nextband .kd,.ov-i .kd{width:34px;height:34px;right:10px;bottom:8px;opacity:.1}
-html[data-theme="dark"] .kd{opacity:.08}
+.nextband .kd,.ov-i .kd{width:38px;height:38px;right:10px;bottom:8px;opacity:.15}
+html[data-theme="dark"] .kd{opacity:.12}
+.kd-login{opacity:.14}
+html[data-theme="dark"] .kd-login{opacity:.1}
+.kd-rail{opacity:.09}
+html[data-theme="dark"] .kd-rail{opacity:.07}
 .kd-login{right:16px;bottom:14px;width:64px;height:64px;opacity:.09}
 html[data-theme="dark"] .kd-login{opacity:.06}
 .rail{position:relative}

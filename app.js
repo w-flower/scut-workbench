@@ -296,7 +296,7 @@ function decorateIcons() {
   const pick = (t) => { for (const [k, v] of map) if (t.includes(k)) return v; return "dot"; };
   document.querySelectorAll("#content .panel-head h3, #content .section-head h2, #content .set-block h3").forEach((h) => { if (h.querySelector(".hd-ic")) return; const s = document.createElement("span"); s.className = "hd-ic"; s.innerHTML = ico(pick(h.textContent), "sm"); h.prepend(s); });
   document.querySelectorAll("#content .empty").forEach((el) => { if (el.querySelector(".em-ic")) return; const d = document.createElement("div"); d.className = "em-ic"; d.innerHTML = kapokArt(); el.prepend(d); });
-  document.querySelectorAll("#content .panel, #content .set-block, #content .hw-card, #content .nextband, #content .ov-i").forEach((pn) => { if (pn.querySelector(":scope > .kd")) return; const s = document.createElement("span"); s.className = "kd"; s.setAttribute("aria-hidden", "true"); s.innerHTML = kapokArt(); pn.appendChild(s); });
+  document.querySelectorAll("#content .section, #content .panel, #content .set-block, #content .hw-card, #content .nextband, #content .ov-i, #content .today-grid").forEach((pn) => { if (pn.querySelector(":scope > .kd")) return; const s = document.createElement("span"); s.className = "kd"; s.setAttribute("aria-hidden", "true"); s.innerHTML = kapokArt(); pn.appendChild(s); });
 }
 function mountKapokDeco() {
   const lc = document.querySelector("#login .card"); if (lc && !lc.querySelector(".kd-login")) { const s = document.createElement("span"); s.className = "kd kd-login"; s.setAttribute("aria-hidden", "true"); s.innerHTML = kapokArt(); lc.appendChild(s); }
@@ -754,8 +754,8 @@ function initPetals() {
   function resize() { const dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = window.innerWidth * dpr; cv.height = window.innerHeight * dpr; cv.style.width = window.innerWidth + "px"; cv.style.height = window.innerHeight + "px"; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
   resize(); window.addEventListener("resize", resize);
   const colors = ["#C0392B", "#D9563F", "#E07A5F", "#B5342A", "#E98B72"];
-  const N = Math.max(60, Math.min(170, Math.round((window.innerWidth * window.innerHeight) / 8500)));
-  const mk = (init) => ({ x: Math.random() * window.innerWidth, y: init ? Math.random() * window.innerHeight : -30, r: 4 + Math.random() * 7.5, sp: 0.3 + Math.random() * 1.15, sway: 0.5 + Math.random() * 1.6, phase: Math.random() * 6.28, rot: Math.random() * 6.28, rotSp: (Math.random() - 0.5) * 0.025, flip: Math.random() * 6.28, flipSp: 0.006 + Math.random() * 0.022, c: colors[(Math.random() * colors.length) | 0], a: 0.26 + Math.random() * 0.4 });
+  const N = Math.max(36, Math.min(90, Math.round((window.innerWidth * window.innerHeight) / 15000)));
+  const mk = (init) => ({ x: Math.random() * window.innerWidth, y: init ? Math.random() * window.innerHeight : -30, r: 4 + Math.random() * 7, sp: 0.3 + Math.random() * 1.1, sway: 0.5 + Math.random() * 1.5, phase: Math.random() * 6.28, rot: Math.random() * 6.28, rotSp: (Math.random() - 0.5) * 0.025, flip: Math.random() * 6.28, flipSp: 0.006 + Math.random() * 0.022, c: colors[(Math.random() * colors.length) | 0], a: 0.16 + Math.random() * 0.26 });
   const petals = []; for (let i = 0; i < N; i++) petals.push(mk(true));
   const path = (r) => { ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(r * 0.6, -r * 0.55, r * 0.76, -r * 1.35, 0, -r * 1.95); ctx.bezierCurveTo(-r * 0.76, -r * 1.35, -r * 0.6, -r * 0.55, 0, 0); ctx.closePath(); };
   const frame = (t) => {
