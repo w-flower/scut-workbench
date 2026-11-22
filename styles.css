@@ -393,6 +393,21 @@ html[data-theme="dark"] .kd{opacity:.17}
 .rail-top{position:relative}
 .kd-railtop{right:14px;top:12px;bottom:auto;width:34px;height:34px;opacity:.3}
 html[data-theme="dark"] .kd-railtop{opacity:.22}
+/* 木棉红点睛：强调色统一为 kapok red */
+:root{
+  --brand:#C0392B; --brand-2:#A5271C; --brand-soft:#FBEDEA;
+  --accent:#C0392B; --accent-ink:#8E2A20; --accent-soft:#FBEDEA;
+}
+html[data-theme="dark"]{
+  --brand:#D9614E; --brand-2:#E0776C; --brand-soft:#2A1A18;
+  --accent:#E0776C; --accent-ink:#F0B4A6; --accent-soft:#2A1A18;
+}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:var(--brand-2);box-shadow:0 6px 16px rgba(192,57,43,.28)}
+.btn.primary:active{background:var(--brand-2)}
+.nav-item[aria-current="page"]{background:var(--brand-soft);color:var(--brand-2)}
+.nav-item[aria-current="page"] .count{background:var(--brand);color:#fff}
+.btn:hover{box-shadow:0 4px 12px rgba(192,57,43,.14)}
 /* themed kapok watercolor background (not flat) */
 body{background:
   radial-gradient(900px 620px at 10% -8%, #FCE7DE 0%, rgba(252,231,222,0) 60%),
